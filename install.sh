@@ -191,6 +191,6 @@ while true ; do
     esac
 done
 
-#install_depenencies
-#download_docker_images
+install_depenencies
+download_docker_images
 install_cess_node

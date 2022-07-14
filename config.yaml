@@ -2,30 +2,28 @@
 node:
   ## the mode of node: authority/storage/watcher
   mode: "authority"
-  externalIp: "42.48.115.228"
+  externalIp: ""
   domainName: ""
-  chainWsUrl: "ws://106.15.44.155:9948/"
-  profile: dev
+  chainWsUrl: "ws://127.0.0.1:9948/"
+  profile: prod
 
 ## chain configurations
 chain:
   ## the name of chain node
-  name: "cess-chain"
-  #spec: "cess-testnet"
-  spec: "/opt/cess-chain/customSpecRaw.json"
+  name: "cess"
   ## the port of chain node
   port: 30336
   
 ## scheduler configurations
 scheduler:
   port: 15000
-  stashAccount: "cXgaKypTZfAufoDsTzx9XHFrqR53xCv8f35nyaC3fntQtXJ7b"
-  controllerPhrase: "absurd tail sausage bag kick wife balcony aisle airport twenty retreat rally"
+  stashAccount: ""
+  controllerPhrase: ""
 
 ## bucket configurations
 bucket:
   port: 15001
   space: 300
-  incomeAccount: "cXjdpdozKiRDp7pKxCKQY15KCRVCwxfyVEG1qUPWdZbostwrB"
-  signPhrase: "assault dutch vote aunt input occur veteran envelope hammer region sand win"
+  incomeAccount: ""
+  signPhrase: ""
   diskPath: ""

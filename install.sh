@@ -34,12 +34,6 @@ install_depenencies()
     fi
 
     if [ x"$DISTRO" == x"Ubuntu" ]; then
-        yq -V >/dev/null
-        if [ $? -ne 0 ]; then
-            log_info "adding apt key for yq..."
-            apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CC86BB64
-            add-apt-repository ppa:rmescandon/yq
-        fi
         log_info "------------Apt update--------------"
         apt-get update
         if [ $? -ne 0 ]; then
@@ -49,6 +43,10 @@ install_depenencies()
 
         log_info "------------Install depenencies--------------"
         apt install -y git yq curl wget net-tools build-essential kmod linux-headers-`uname -r` vim
+        yq -V >/dev/null
+        if [ $? -ne 0 ]; then
+            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+        fi
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"

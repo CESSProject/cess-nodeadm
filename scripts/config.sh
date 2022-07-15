@@ -324,6 +324,7 @@ config_set_all()
         set_bucket_disk_spase
     elif [ x"$mode" == x"watcher" ]; then
         set_chain_name
+        set_external_ip
     else
         log_err "Invalid mode value: $mode"
         exit 1
@@ -404,7 +405,7 @@ config_generate()
         fi
         cp $build_dir/bucket/* $base_mode_path/bucket/
     elif [ x"$mode" == x"watcher" ]; then
-    if [ ! -d $base_mode_path/chain/ ]; then
+        if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/
         fi
         cp $build_dir/chain/* $base_mode_path/chain/

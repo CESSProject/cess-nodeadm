@@ -135,10 +135,8 @@ install_cess_node()
         echo "Update cess nodeadm"
         rm $bin_file
         rm -rf $install_dir/scripts
-        rm -rf $install_dir/etc
         rm -f $install_dir/config.yaml
         cp -r $local_base_dir/scripts $install_dir/
-        cp -r $local_base_dir/etc $install_dir/
         cp $local_base_dir/config.yaml $install_dir/
     else
         if [ -f "$install_dir/scripts/uninstall.sh" ]; then
@@ -152,7 +150,6 @@ install_cess_node()
         chown root:root $install_dir/config.yaml
         chmod 0600 $install_dir/config.yaml
         cp -r $local_base_dir/scripts $install_dir/
-        cp -r $local_base_dir/etc $install_dir/
 
         yq -i eval ".node.region=\"$region\"" $config_file
     fi

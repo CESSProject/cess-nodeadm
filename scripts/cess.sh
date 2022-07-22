@@ -35,6 +35,12 @@ start()
                 docker-compose -f $compose_yaml down
                 exit 1
             fi
+
+            start_kaleido
+            if [ $? -ne 0 ]; then
+                docker-compose -f $compose_yaml down
+                exit 1
+            fi
         elif [ x"$mode" == x"storage" ]; then
             start_bucket
             if [ $? -ne 0 ]; then
@@ -77,6 +83,16 @@ start()
             return 0
         fi
 
+        if [ x"$1" = x"kaleido" ]; then
+            log_info "Start kaleido service"
+            start_kaleido
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+            log_success "Start kaleido service success"
+            return 0
+        fi
+
     elif [ x"$mode" == x"storage" ]; then
         if [ x"$1" = x"bucket" ]; then
             log_info "Start bucket service"
@@ -109,6 +125,7 @@ stop()
         log_info "Stop cess"
         stop_chain
         stop_scheduler
+        stop_kaleido
         stop_bucket
         log_success "Stop cess success"
         return 0
@@ -132,6 +149,13 @@ stop()
         log_info "Stop scheduler service"
         stop_scheduler
         log_success "Stop scheduler service success"
+        return 0
+    fi
+
+    if [ x"$1" == x"kaleido" ]; then
+        log_info "Stop kaleido service"
+        stop_kaleido
+        log_success "Stop kaleido service success"
         return 0
     fi
 
@@ -222,6 +246,37 @@ stop_scheduler()
     return 0
 }
 
+start_kaleido()
+{
+    if [ ! -f "$compose_yaml" ]; then
+        log_err "No configuration file, please set config"
+        return 1
+    fi
+
+    check_docker_status kaleido
+    if [ $? -eq 0 ]; then
+        return 0
+    fi
+
+    docker-compose -f $compose_yaml up -d kaleido
+    if [ $? -ne 0 ]; then
+        log_err "Start cess kaleido failed"
+        return 1
+    fi
+    return 0
+}
+
+stop_kaleido()
+{
+    check_docker_status kaleido
+    if [ $? -ne 1 ]; then
+        log_info "Stopping cess kaleido service"
+        docker stop kaleido &>/dev/null
+        docker rm kaleido &>/dev/null
+    fi
+    return 0
+}
+
 start_bucket()
 {
     if [ ! -f "$compose_yaml" ]; then
@@ -279,6 +334,16 @@ reload() {
         start_scheduler
 
         log_success "Reload scheduler service success"
+        return 0
+    fi
+
+    if [ x"$1" = x"kaleido" ]; then
+        log_info "Reload kaleido service"
+        
+        stop_kaleido
+        start_kaleido
+
+        log_success "Reload kaleido service success"
         return 0
     fi
 
@@ -345,6 +410,14 @@ logs()
             return 0
         fi
         docker logs ${array[@]} -f bucket
+        logs_help_flag=$?
+    elif [ x"$name" == x"kaleido" ]; then        
+        check_docker_status kaleido
+        if [ $? -eq 1 ]; then
+            log_info "Service cess kaleido is not started now"
+            return 0
+        fi
+        docker logs ${array[@]} -f kaleido
         logs_help_flag=$?    
     else
         logs_help
@@ -367,6 +440,8 @@ status()
         scheduler_status
     elif [ x"$1" == x"bucket" ]; then
         bucket_status
+    elif [ x"$1" == x"kaleido" ]; then
+        kaleido_status
     elif [ x"$1" == x"" ]; then
         all_status
     else
@@ -384,6 +459,7 @@ EOF
     local chain_status="stop"
     local scheduler_status="stop"
     local bucket_status="stop"
+    local kaleido_status="stop"
     if [ x"$mode" == x"authority" ] || [ x"$mode" == x"watcher" ]; then
         check_docker_status chain
         local res=$?
@@ -404,6 +480,15 @@ EOF
             scheduler_status="exited"
         fi
         echo "    scheduler                  ${scheduler_status}"
+
+        check_docker_status kaleido
+        res=$?
+        if [ $res -eq 0 ]; then
+            kaleido_status="running"
+        elif [ $res -eq 2 ]; then
+            kaleido_status="exited"
+        fi
+        echo "    kaleido                    ${kaleido_status}"
     fi
 
     if [ x"$mode" == x"storage" ]; then
@@ -460,6 +545,27 @@ cat << EOF
     Service                    Status
 -----------------------------------------
     scheduler                  ${status}
+-----------------------------------------
+EOF
+}
+
+kaleido_status()
+{
+    local status="stop"
+
+    check_docker_status kaleido
+    res=$?
+    if [ $res -eq 0 ]; then
+        status="running"
+    elif [ $res -eq 2 ]; then
+        status="exited"
+    fi
+
+cat << EOF
+-----------------------------------------
+    Service                    Status
+-----------------------------------------
+    kaleido                    ${status}
 -----------------------------------------
 EOF
 }
@@ -540,19 +646,19 @@ help()
 {
 cat << EOF
 Usage:
-    help                                 show help information
-    version                              show version
+    help                                        show help information
+    version                                     show version
 
-    start {chain|scheduler|bucket}       start all cess service
-    stop {chain|scheduler|bucket}        stop all cess service or stop one service
+    start {chain|scheduler|bucket|kaleido}      start all cess service
+    stop {chain|scheduler|bucket|kaleido}       stop all cess service or stop one service
 
-    status {chain|scheduler|bucket}      check status or reload one service status
-    reload {chain|scheduler|bucket}      reload all service or reload one service
-    logs {chain|scheduler|bucket}        track service logs, ctrl-c to exit. use 'cess logs help' for more details
+    status {chain|scheduler|bucket|kaleido}     check status or reload one service status
+    reload {chain|scheduler|bucket|kaleido}     reload all service or reload one service
+    logs {chain|scheduler|bucket|kaleido}       track service logs, ctrl-c to exit. use 'cess logs help' for more details
     
-    config {...}                         configuration operations, use 'cess config help' for more details
-    bucket {...}                         use 'cess bucket help' for more details
-    tools {...}                          use 'cess tools help' for more details
+    config {...}                                configuration operations, use 'cess config help' for more details
+    bucket {...}                                use 'cess bucket help' for more details
+    tools {...}                                 use 'cess tools help' for more details
 EOF
 }
 

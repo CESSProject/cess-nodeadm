@@ -143,25 +143,32 @@ get_distro_name()
 SGX_DRIVER=""
 ensure_installed_sgx_driver()
 {
+    local info=""
+    local ret=0
     if [ -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        log_info "Your device exists: /dev/sgx/enclave /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
+        info="Your device exists: /dev/sgx/enclave /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        log_info "Your device exists: /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
+        info="Your device exists: /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        log_info "Your device exists: /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
+        info="Your device exists: /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        log_info "Your device exists: /dev/sgx_provision is related to the DCAP driver"
+        info="Your device exists: /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ ! -c /dev/sgx_provision ] && [ -c /dev/isgx ]; then
         SGX_DRIVER="isgx"
-        log_info "Your device exists: /dev/isgx is related to the isgx driver"
+        info="Your device exists: /dev/isgx is related to the isgx driver"
     else
-        log_info "The DCAP/isgx driver file was not found, please check the driver installation logs!"
-        return 1
+        info="The DCAP/isgx driver file was not found, please check the driver installation logs!"
+        ret=1
     fi
-    log_info "Your machine's SGX driver is: $SGX_DRIVER"
-    return 0
+    if [ x"$1" == x"" ]; then
+        log_info "$info"
+        if [ $ret -eq 0 ]; then
+            log_info "Your machine's SGX driver is: $SGX_DRIVER"
+        fi
+    fi
+    return $ret
 }

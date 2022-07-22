@@ -365,6 +365,7 @@ config_generate()
         local sgx_driver="`yq eval ".node.sgxDriver" $config_file`"
         if [ x"$sgx_driver" == x"" ] || [ x"$sgx_driver" == x"null" ]; then
             $script_dir/install_sgx_driver.sh
+            ensure_installed_sgx_driver 1
             if [ $? -ne 0 ]; then
                 log_err "Install SGX dirver failed"
                 exit 1

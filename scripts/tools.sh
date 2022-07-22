@@ -60,6 +60,11 @@ upgrade_image()
         if [ $? -ne 0 ]; then
             return 1
         fi
+    elif [ x"$1" == x"kaleido" ]; then
+        upgrade_docker_image cess-kaleido $2
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
     elif [ x"$1" == x"bucket" ]; then
         upgrade_docker_image cess-bucket $2
         if [ $? -ne 0 ]; then

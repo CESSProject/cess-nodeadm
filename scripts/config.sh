@@ -362,15 +362,16 @@ config_chain_port()
 config_generate()
 {
     if [ x"$mode" == x"authority" ]; then
-        local sgx_driver="`yq eval ".node.sgxDriver" $config_file`"
-        if [ x"$sgx_driver" == x"" ] || [ x"$sgx_driver" == x"null" ]; then
+        local sgx_devices_len=`yq eval ".kaleido.sgxDevices | length" $config_file`
+        if [ $sgx_devices_len -eq 0 ]; then
             $script_dir/install_sgx_driver.sh
             ensure_installed_sgx_driver 1
             if [ $? -ne 0 ]; then
                 log_err "Install SGX dirver failed"
                 exit 1
             fi
-            yq -i eval ".node.sgxDriver=\"$SGX_DRIVER\"" $config_file
+            local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
+            yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
         fi
     fi
 
@@ -385,11 +386,10 @@ config_generate()
     rm -rf $build_dir
     mkdir -p $build_dir/.tmp
 
-    cp -f $config_file $build_dir/
     local cidfile=`mktemp`
     rm $cidfile
 
-    docker run --cidfile $cidfile -v $base_dir/etc:/opt/app/etc -v $build_dir/.tmp:/opt/app/.tmp -v $build_dir/config.yaml:/opt/app/config.yaml $cg_image
+    docker run --cidfile $cidfile -v $base_dir/etc:/opt/app/etc -v $build_dir/.tmp:/opt/app/.tmp -v $config_file:/opt/app/config.yaml $cg_image
     local res="$?"
     local cid=`cat $cidfile`
     docker rm $cid

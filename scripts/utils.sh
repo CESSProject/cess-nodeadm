@@ -141,24 +141,30 @@ get_distro_name()
 }
 
 SGX_DRIVER=""
+SGX_DEVICES=()
 ensure_installed_sgx_driver()
 {
     local info=""
     local ret=0
     if [ -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
+        SGX_DEVICES=("/dev/sgx_enclave" "/dev/sgx_provision")
         info="Your device exists: /dev/sgx/enclave /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
+        SGX_DEVICES=("/dev/sgx_enclave" "/dev/sgx_provision")
         info="Your device exists: /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
+        SGX_DEVICES=("/dev/sgx_enclave" "/dev/sgx_provision")
         info="Your device exists: /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
+        SGX_DEVICES=("/dev/sgx_provision")
         info="Your device exists: /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ ! -c /dev/sgx_provision ] && [ -c /dev/isgx ]; then
         SGX_DRIVER="isgx"
+        SGX_DEVICES=("/dev/isgx")
         info="Your device exists: /dev/isgx is related to the isgx driver"
     else
         info="The DCAP/isgx driver file was not found, please check the driver installation logs!"

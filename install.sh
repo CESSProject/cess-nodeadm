@@ -20,9 +20,10 @@ help()
 {
 cat << EOF
 Usage:
-    help                       show help information
-    --update                   update cess node
-    --region {cn|en}           use region to accelerate docker pull
+    help                  show help information
+    --update              update cess-nodeadm script and config
+    --retain-config       retain old config when update cess-nodeadm, only valid on update option
+    --region {cn|en}      use region to accelerate docker pull
 EOF
 exit 0
 }
@@ -139,9 +140,11 @@ install_cess_node()
         echo "Update cess nodeadm"
         rm $bin_file
         rm -rf $install_dir/scripts
-        rm -f $install_dir/config.yaml
         cp -r $local_base_dir/scripts $install_dir/
-        cp $local_base_dir/config.yaml $install_dir/
+        if [ x"$retain_config" != x"true" ]; then
+            rm -f $install_dir/config.yaml
+            cp $local_base_dir/config.yaml $install_dir/
+        fi
     else
         if [ -f "$install_dir/scripts/uninstall.sh" ]; then
             echo "Uninstall old cess nodeadm"
@@ -166,6 +169,7 @@ install_cess_node()
 
 region="en"
 update="false"
+retain_config="false"
 
 while true ; do
     case "$1" in
@@ -178,6 +182,10 @@ while true ; do
             ;;
         --update)
             update="true"
+            shift 1
+            ;;
+        --retain-config)
+            retain_config="true"
             shift 1
             ;;
         "")

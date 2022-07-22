@@ -369,7 +369,7 @@ config_generate()
                 log_err "Install SGX dirver failed"
                 exit 1
             fi
-            yq -i eval ".node.sgxDriver=$SGX_DRIVER" $config_file
+            yq -i eval ".node.sgxDriver=\"$SGX_DRIVER\"" $config_file
         fi
     fi
 

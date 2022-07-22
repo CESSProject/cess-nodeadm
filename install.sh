@@ -119,7 +119,11 @@ download_docker_images()
     docker pull $docker_org/cess-bucket:$img_tag
     res=$(($?|$res))
     docker tag $docker_org/cess-bucket:$img_tag cesslab/cess-bucket
-        
+
+    docker pull $docker_org/cess-kaleido:$img_tag
+    res=$(($?|$res))
+    docker tag $docker_org/cess-kaleido:$img_tag cesslab/cess-kaleido
+
     if [ $res -ne 0 ]; then
         log_err "Install docker failed"
         exit 1

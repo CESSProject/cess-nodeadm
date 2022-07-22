@@ -6,6 +6,7 @@ node:
   domainName: ""
   chainWsUrl: "ws://127.0.0.1:9948/"
   profile: prod
+  sgxDriver: ""
 
 ## chain configurations
 chain:
@@ -27,3 +28,7 @@ bucket:
   incomeAccount: ""
   signPhrase: ""
   diskPath: ""
+
+## kaleido configurations
+kaleido:
+  port: 8080

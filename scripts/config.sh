@@ -361,6 +361,18 @@ config_chain_port()
 
 config_generate()
 {
+    if [ x"$mode" == x"authority" ]; then
+        local sgx_driver="`yq eval ".node.sgxDriver" $config_file`"
+        if [ x"$sgx_driver" == x"" ] || [ x"$sgx_driver" == x"null" ]; then
+            $script_dir/install_sgx_driver.sh
+            if [ $? -ne 0 ]; then
+                log_err "Install SGX dirver failed"
+                exit 1
+            fi
+            yq -i eval ".node.sgxDriver=$SGX_DRIVER" $config_file
+        fi
+    fi
+
     log_info "Start generate configurations and docker compose file"
     local cg_image="cesslab/config-gen:latest"
 

@@ -64,7 +64,7 @@ function install_dcap() {
         log_success "Delete temporary files"
         rm /tmp/$dcap_driverbin
     fi
-
+    log_success "DCAP driver installed successfully"
     return 0
 }
 
@@ -98,7 +98,7 @@ function install_isgx() {
         log_success "Deleteted temporary files"
         rm /tmp/$isgx_driverbin
     fi
-
+    log_success "iSGX driver installed successfully"
     return 0
 }
 
@@ -126,8 +126,3 @@ isgx)
     try_install_dcap_else_isgx
     ;;
 esac
-
-ensure_installed_sgx_driver
-if [ $? -ne 0 ]; then
-    exit 1
-fi

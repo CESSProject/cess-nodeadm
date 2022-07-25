@@ -362,10 +362,10 @@ config_chain_port()
 config_generate()
 {
     if [ x"$mode" == x"authority" ]; then
-        local sgx_devices_len=`yq eval ".kaleido.sgxDevices | length" $config_file`
+        local sgx_devices_len=$( yq eval ".kaleido.sgxDevices | length" $config_file )
         if [ $sgx_devices_len -eq 0 ]; then
             $script_dir/install_sgx_driver.sh
-            ensure_installed_sgx_driver 1
+            ensure_installed_sgx_driver
             if [ $? -ne 0 ]; then
                 log_err "Install SGX dirver failed"
                 exit 1

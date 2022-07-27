@@ -8,8 +8,9 @@ cat << EOF
 cess config usage:
     help                    show help information
     show                    show configurations
-    set                     set and generate new configurations
+    set                     set and generate new configurations, then try pull corresponding images
     generate                generate new configurations
+    pull-image              download corresponding images after set config
     chain-port {port}       set chain port and generate new configuration, default is 30888
     conn-chain {ws}         set conneted chain ws and generate new configuration, default is ws://127.0.0.1:19944
 EOF
@@ -295,7 +296,75 @@ set_bucket_disk_spase()
     done
 }
 
-config_set_all()
+function ss()
+{
+    local img_tag="latest"
+    docker pull $docker_org/cess-chain:$img_tag
+    res=$(($?|$res))
+    docker tag $docker_org/cess-chain:$img_tag cesslab/cess-chain
+
+    docker pull $docker_org/cess-scheduler:$img_tag
+    res=$(($?|$res))
+    docker tag $docker_org/cess-scheduler:$img_tag cesslab/cess-scheduler
+
+    docker pull $docker_org/cess-bucket:$img_tag
+    res=$(($?|$res))
+    docker tag $docker_org/cess-bucket:$img_tag cesslab/cess-bucket
+
+    docker pull $docker_org/cess-kaleido:$img_tag
+    res=$(($?|$res))
+    docker tag $docker_org/cess-kaleido:$img_tag cesslab/cess-kaleido
+}
+
+function try_pull_image()
+{
+    local img_name=$1
+    local img_tag=$2
+    local ret=(`docker images | grep $img_name`)
+    if [ ${#ret[@]} -ne 0 ]; then
+        return 1
+    fi
+    
+    local docker_org="cesslab"
+    if [ x"$region" == x"cn" ]; then
+       docker_org=$aliyun_address/$docker_org
+    fi
+    if [ -z $img_tag ]; then
+        img_tag="latest"
+    fi
+    local img_id="$docker_org/$img_name:$img_tag"
+    docker pull $img_id
+    if [ $? -ne 0 ]; then
+        log_err "download image $img_id failed, try again later"
+        exit 1
+    fi    
+    docker tag $img_id cesslab/$img_name
+    return 0
+}
+
+function pull_images_by_mode()
+{
+    if [ x"$mode" == x"authority" ]; then
+        local tag=$(yq eval ".kaleido.sgxDriver" $config_file)
+        if [ -z $tag ]; then
+            log_err "the sgx driver config is empty, please config first"
+            return 1
+        fi
+        try_pull_image kaleido tag
+        try_pull_image chain
+        try_pull_image scheduler
+    elif [ x"$mode" == x"storage" ]; then
+        try_pull_image bucket
+    elif [ x"$mode" == x"watcher" ]; then
+        try_pull_image chain
+    else
+        log_err "the node mode is invalid, please config again"
+        return 1
+    fi
+    return 0
+}
+
+function config_set_all()
 {
     ensure_root
     
@@ -333,6 +402,10 @@ config_set_all()
     
     # Generate configurations
     config_generate
+
+    # Pull images
+    log_info "Try pull images"
+    pull_images_by_mode
 }
 
 config_conn_chain()
@@ -372,6 +445,7 @@ config_generate()
             fi
             local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
             yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
+            yq -i eval ".kaleido.sgxDriver=\"${SGX_DRIVER}\"" $config_file
         fi
     fi
 
@@ -452,6 +526,9 @@ config()
             ;;
         generate)
             config_generate
+            ;;
+        pull-image)
+            pull_images_by_mode
             ;;
         *)
             config_help

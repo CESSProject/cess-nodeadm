@@ -61,7 +61,11 @@ upgrade_image()
             return 1
         fi
     elif [ x"$1" == x"kaleido" ]; then
-        upgrade_docker_image cess-kaleido $2
+        local tag=$2
+        if [ -z $tag ]; then
+            tag=$(yq eval ".kaleido.sgxDriver" $config_file)
+        fi
+        upgrade_docker_image cess-kaleido $tag
         if [ $? -ne 0 ]; then
             return 1
         fi

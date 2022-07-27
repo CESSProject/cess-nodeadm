@@ -30,5 +30,6 @@ bucket:
 
 ## kaleido configurations
 kaleido:
+  sgxDriver: ""
   sgxDevices: []
   port: 8080

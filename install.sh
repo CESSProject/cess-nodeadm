@@ -103,32 +103,12 @@ download_docker_images()
        docker_org=$aliyun_address/$docker_org
     fi
 
-    local res=0
     docker pull $docker_org/config-gen:latest
-    res=$(($?|$res))
-    docker tag $docker_org/config-gen:latest cesslab/config-gen
-    
-    local img_tag="latest"
-    docker pull $docker_org/cess-chain:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-chain:$img_tag cesslab/cess-chain
-
-    docker pull $docker_org/cess-scheduler:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-scheduler:$img_tag cesslab/cess-scheduler
-
-    docker pull $docker_org/cess-bucket:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-bucket:$img_tag cesslab/cess-bucket
-
-    docker pull $docker_org/cess-kaleido:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-kaleido:$img_tag cesslab/cess-kaleido
-
-    if [ $res -ne 0 ]; then
-        log_err "Install docker failed"
+    if [ $? -ne 0 ]; then
+        log_err "download image $docker_org/config-gen:latest failed, try again later"
         exit 1
     fi
+    docker tag $docker_org/config-gen:latest cesslab/config-gen
 }
 
 install_cess_node()

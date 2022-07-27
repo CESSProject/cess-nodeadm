@@ -34,8 +34,8 @@ function try_uninstall_dirver() {
     fi
 }
 
-function install_dcap() {
-    log_info "Download dcap driver"
+function install_dcap_sgx_driver() {
+    log_info "Download dcap sgx driver"
     for i in $(seq 0 4); do
         wget $dcap_driverurl -O /tmp/$dcap_driverbin
         if [ $? -ne 0 ]; then
@@ -68,8 +68,8 @@ function install_dcap() {
     return 0
 }
 
-function install_isgx() {
-    log_info "Download isgx driver"
+function install_oot_sgx_driver() {
+    log_info "Download oot sgx driver"
     for i in $(seq 0 4); do
         wget $isgx_driverurl -O /tmp/$isgx_driverbin
         if [ $? -ne 0 ]; then
@@ -102,27 +102,14 @@ function install_isgx() {
     return 0
 }
 
-function try_install_dcap_else_isgx() {
-    install_dcap
+check_dcap_driver
+check_oot_driver
 
-    if [ $? -ne 0 ]; then
-        log_info "try install isgx driver"
-        install_isgx
-        if [ $? -ne 0 ]; then
-            log_err "Failed to install the DCAP and the isgx driver, please check the driver installation logs!"
-            exit 1
-        fi
+if [[ $oot_driver_found == false && $dcap_driver_found == false ]]; then
+    check_sgx
+    if [[ $install_dcap == "1" ]]; then
+        install_dcap_sgx_driver
+    else
+        install_oot_sgx_driver
     fi
-}
-
-case "$1" in
-dcap)
-    install_dcap
-    ;;
-isgx)
-    install_isgx
-    ;;
-*)
-    try_install_dcap_else_isgx
-    ;;
-esac
+fi

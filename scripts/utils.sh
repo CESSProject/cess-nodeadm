@@ -211,7 +211,8 @@ function check_oot_driver {
         oot_driver_found=true
         echo "SGX-driver already installed."
         if [[ ! -e /dev/isgx ]] ; then
-            log_error "SGX driver is installed but no SGX device - SGX not enabled?"
+            log_err "SGX driver is installed but no SGX device - SGX not enabled?"
+            exit 1
         fi
     fi
 }
@@ -225,7 +226,8 @@ function check_dcap_driver {
         dcap_driver_found=true
         echo "DCAP SGX-driver already installed."
         if [[ ! -e /dev/sgx ]] ; then
-            log_error "DCAP SGX driver is installed but no SGX device - SGX not enabled?"
+            log_err "DCAP SGX driver is installed but no SGX device - SGX not enabled?"
+            exit 1
         fi
     fi
 }

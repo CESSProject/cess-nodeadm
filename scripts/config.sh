@@ -333,6 +333,7 @@ function try_pull_image()
         img_tag="latest"
     fi
     local img_id="$docker_org/$img_name:$img_tag"
+    log_info "download image: $img_id"
     docker pull $img_id
     if [ $? -ne 0 ]; then
         log_err "download image $img_id failed, try again later"
@@ -344,23 +345,25 @@ function try_pull_image()
 
 function pull_images_by_mode()
 {
+    log_info "try pull images, node mode: $mode"
     if [ x"$mode" == x"authority" ]; then
         local tag=$(yq eval ".kaleido.sgxDriver" $config_file)
         if [ -z $tag ]; then
             log_err "the sgx driver config is empty, please config first"
             return 1
         fi
-        try_pull_image kaleido tag
-        try_pull_image chain
-        try_pull_image scheduler
+        try_pull_image cess-kaleido tag
+        try_pull_image cess-chain
+        try_pull_image cess-scheduler
     elif [ x"$mode" == x"storage" ]; then
-        try_pull_image bucket
+        try_pull_image cess-bucket
     elif [ x"$mode" == x"watcher" ]; then
-        try_pull_image chain
+        try_pull_image cess-chain
     else
         log_err "the node mode is invalid, please config again"
         return 1
     fi
+    log_info "pull images finished"
     return 0
 }
 
@@ -404,7 +407,6 @@ function config_set_all()
     config_generate
 
     # Pull images
-    log_info "Try pull images"
     pull_images_by_mode
 }
 

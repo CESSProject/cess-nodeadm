@@ -190,7 +190,7 @@ start_chain()
     res=$(($?|$res))
     check_port 9933  #check the RPC port
     res=$(($?|$res))
-    check_port 9948  #check the WS port
+    check_port 9944  #check the WS port
     res=$(($?|$res))
     if [ $res -ne 0 ]; then
         return 1

@@ -1,0 +1,35 @@
+## node configurations
+node:
+  ## the mode of node: authority/storage/watcher
+  mode: "authority"
+  externalIp: ""
+  domainName: ""
+  chainWsUrl: "ws://127.0.0.1:9944/"
+  profile: prod
+
+## chain configurations
+chain:
+  ## the name of chain node
+  name: "cess"
+  ## the port of chain node
+  port: 30336
+  
+## scheduler configurations
+scheduler:
+  port: 15000
+  stashAccount: ""
+  controllerPhrase: ""
+
+## bucket configurations
+bucket:
+  port: 15001
+  space: 300
+  incomeAccount: ""
+  signPhrase: ""
+  diskPath: ""
+
+## kaleido configurations
+kaleido:
+  sgxDriver: ""
+  sgxDevices: []
+  port: 8080

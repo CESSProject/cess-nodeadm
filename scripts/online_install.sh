@@ -8,27 +8,29 @@ if [ $(id -u) -ne 0 ]; then
     exit 1
 fi
 
-wget https://github.com/cesslab/nodeadm/archive/v$version.tar.gz
-if [ $res -ne 0 ]; then
-    echo "Download v$version.tar.gz failed"
+echo "downloading cess-nodeadm-v$version from github"
+wget -q https://github.com/CESSProject/cess-nodeadm/archive/v$version.tar.gz
+if [ $? -ne 0 ]; then
+    echo "Download cess-nodeadm-v$version.tar.gz failed"
     exit 1
 fi
 
-tar -xvf v$version.tar.gz
-if [ $res -ne 0 ]; then
-    echo "Unzip v$version.tar.gz failed"
+tar -xf v$version.tar.gz
+if [ $? -ne 0 ]; then
+    echo "Unzip cess-nodeadm-v$version.tar.gz failed"
     rm v$version.tar.gz
     exit 1
 fi
 
-./nodeadm-$version/install.sh $@
-if [ $res -ne 0 ]; then
-    echo "Install cess node $version failed"
+echo "start install cess-nodeadm-v$version"
+./cess-nodeadm-$version/install.sh $@
+if [ $? -ne 0 ]; then
+    echo "Install cess-nodeadm $version failed"
     rm v$version.tar.gz
-    rm -rf nodeadm-$version
+    rm -rf cess-nodeadm-$version
     exit 1
 fi
 
 rm v$version.tar.gz
-rm -rf nodeadm-$version
+rm -rf cess-nodeadm-$version
 exit 0

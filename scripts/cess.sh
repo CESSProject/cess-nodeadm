@@ -623,6 +623,12 @@ bucket_ops()
         state)
             $cmd state $cfg_arg
             ;;
+        update_address)
+            $cmd update_address $2
+            ;;
+        update_income)
+            $cmd update_income $2
+            ;;
         *)
             bucket_ops_help
     esac
@@ -632,11 +638,13 @@ bucket_ops_help()
 {
 cat << EOF
 cess bucket usage (only on storage mode):
-    register              Register mining miner information to the chain
-    increase [amount]     Increase the deposit of mining miner
-    exit                  Exit the mining platform
-    withdraw [amount]     Redemption deposit
-    state                 Query mining miner information
+    register                   Register mining miner information to the chain
+    increase [amount]          Increase the deposit of mining miner
+    exit                       Exit the mining platform
+    withdraw [amount]          Redemption deposit
+    state                      Query mining miner information
+    update_address [ip:port]   Update the miner's access address
+    update_income [account]    Update the miner's income account
 EOF
 }
 

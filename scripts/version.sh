@@ -22,11 +22,13 @@ inner_docker_version()
         local sche_image=(`docker images | grep '^\b'cesslab/cess-scheduler'\b ' | grep 'latest'`)
         sche_image=${sche_image[2]}
         printf "  Chain: ${chain_image}\n"
-        printf "  Scheduler: ${sche_image}\n"
+        local sche_version=$(docker run --rm cesslab/cess-scheduler ./cess-scheduler version)
+        printf "  Scheduler: ${sche_version} ${sche_image}\n"
     elif [ x"$mode" == x"storage" ]; then
         local bucket_image=(`docker images | grep '^\b'cesslab/cess-bucket'\b ' | grep 'latest'`)
         bucket_image=${bucket_image[2]}
-        printf "  Bucket: ${bucket_image}\n"
+        local bucket_version=$(docker run --rm cesslab/cess-bucket ./cess-bucket version)
+        printf "  Bucket: $bucket_version ${bucket_image}\n"
     elif [ x"$mode" == x"watcher" ]; then
         local chain_image=(`docker images | grep '^\b'cesslab/cess-chain'\b ' | grep 'latest'`)
         chain_image=${chain_image[2]}

@@ -624,10 +624,10 @@ bucket_ops()
             $cmd state $cfg_arg
             ;;
         update_address)
-            $cmd update_address $2
+            $cmd update_address $2 $cfg_arg
             ;;
         update_income)
-            $cmd update_income $2
+            $cmd update_income $2 $cfg_arg
             ;;
         *)
             bucket_ops_help

@@ -648,6 +648,72 @@ cess bucket usage (only on storage mode):
 EOF
 }
 
+function purge()
+{
+    log_info "WARNING: this operate can remove your data regarding program and can't revert."
+    log_info "         Make sure you understand you do!"
+    printf "Press \033[0;33mY\033[0m if you really want to do: "
+    local y=""
+    read y
+    if [ x"$y" != x"Y" ]; then
+        echo "purge operate cancel"
+        return 1
+    fi
+
+    if [ x"$1" = x"" ]; then
+        if [ x"$mode" == x"authority" ]; then
+            purge_scheduler
+            purge_chain
+        elif [ x"$mode" == x"storage" ]; then
+            purge_bucket
+        elif [ x"$mode" == x"watcher" ]; then
+            purge_chain
+        fi
+        return $?
+    fi
+
+    if [ x"$1" = x"chain" ]; then
+        return purge_chain
+    fi
+
+    if [ x"$1" = x"scheduler" ]; then
+        return purge_scheduler
+    fi
+
+    if [ x"$1" = x"bucket" ]; then
+        return purge_bucket
+    fi
+    help
+    return 1
+}
+
+function purge_chain()
+{
+    stop_chain
+    rm -rf /opt/cess/$mode/chain/*
+    if [ $? -eq 0 ]; then
+        log_success "purge chain data success"
+    fi
+}
+
+function purge_scheduler()
+{
+    stop_scheduler
+    rm -rf /opt/cess/$mode/scheduler/*
+    if [ $? -eq 0 ]; then
+        log_success "purge scheduler data success"
+    fi
+}
+
+function purge_bucket()
+{
+    stop_bucket
+    rm -rf /opt/cess/$mode/bucket/*
+    if [ $? -eq 0 ]; then
+        log_success "purge bucket data success"
+    fi
+}
+
 ######################################main entrance############################################
 
 help()
@@ -663,6 +729,7 @@ Usage:
     status {chain|scheduler|bucket}     check status or reload one service status
     reload {chain|scheduler|bucket}     reload all service or reload one service
     logs {chain|scheduler|bucket}       track service logs, ctrl-c to exit. use 'cess logs help' for more details
+    purge {chain|scheduler|bucket}      remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
     
     config {...}                        configuration operations, use 'cess config help' for more details
     bucket {...}                        use 'cess bucket help' for more details
@@ -693,6 +760,10 @@ case "$1" in
     logs)
         shift
         logs $@
+        ;;
+    purge)
+        shift
+        purge $@
         ;;
     bucket)
         shift

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nodeadm_version="v0.1.0"
+nodeadm_version="v0.1.1"
 aliyun_address="region.cn-hangzhou.aliyuncs.com"
 
 base_dir=/opt/cess/nodeadm
@@ -8,6 +8,8 @@ script_dir=$base_dir/scripts
 config_file=$base_dir/config.yaml
 build_dir=$base_dir/build
 compose_yaml=$build_dir/docker-compose.yaml
+default_image_tag="latest"
+profile="prod"
 
 function echo_c()
 {
@@ -55,7 +57,7 @@ function msg_color {
 function upgrade_docker_image()
 {
     local image_name=$1
-    local image_tag="latest"
+    local image_tag=$default_image_tag
     if [ x"$2" != x"" ]; then
         image_tag=$2
     fi
@@ -275,4 +277,30 @@ function check_sgx {
         # enable dcap
         install_dcap=1
     fi    
+}
+
+function set_profile()
+{
+    local to_set=$1
+    if [ x"$to_set" == x"dev" ] || [ x"$to_set" == x"test" ] || [ x"$to_set" == x"prod" ]; then
+        yq -i eval ".node.profile=\"$to_set\"" $config_file
+        log_success "the profile set to $to_set"
+        return 0
+    fi
+    log_err "invalid profile value"
+    return 1
+}
+
+function load_profile()
+{
+    local p="`yq eval ".node.profile" $config_file`"
+    if [ x"$p" == x"dev" ] || [ x"$p" == x"test" ] || [ x"$p" == x"prod" ]; then
+        profile=$p
+        if [ x"$p" == x"dev" ]; then
+            default_image_tag="dev"
+        fi
+        return 0
+    fi
+    log_err "the profile: $p of config file is invalid, use default value: $profile"
+    return 1
 }

@@ -670,6 +670,8 @@ Usage:
 EOF
 }
 
+load_profile
+
 case "$1" in
     version)
         version

@@ -5,6 +5,7 @@ source /opt/cess/nodeadm/scripts/utils.sh
 version()
 {
     printf "Node mode: ${mode}\n"
+    printf "Profile: ${profile}\n"
     printf "nodeadm version: ${nodeadm_version}\n"
     inner_docker_version
 }

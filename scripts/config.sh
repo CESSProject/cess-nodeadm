@@ -330,7 +330,7 @@ function try_pull_image()
        docker_org=$aliyun_address/$docker_org
     fi
     if [ -z $img_tag ]; then
-        img_tag="latest"
+        img_tag=$default_image_tag
     fi
     local img_id="$docker_org/$img_name:$img_tag"
     log_info "download image: $img_id"
@@ -452,7 +452,7 @@ config_generate()
     # fi
 
     log_info "Start generate configurations and docker compose file"
-    local cg_image="cesslab/config-gen:latest"
+    local cg_image="cesslab/config-gen:$default_image_tag"
 
     if [ ! -f "$config_file" ]; then
         log_err "config.yaml doesn't exists!"

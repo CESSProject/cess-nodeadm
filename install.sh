@@ -111,12 +111,12 @@ download_docker_images()
        docker_org=$aliyun_address/$docker_org
     fi
 
-    docker pull $docker_org/config-gen:latest
+    docker pull $docker_org/config-gen:$default_image_tag
     if [ $? -ne 0 ]; then
-        log_err "download image $docker_org/config-gen:latest failed, try again later"
+        log_err "download image $docker_org/config-gen:$default_image_tag failed, try again later"
         exit 1
     fi
-    docker tag $docker_org/config-gen:latest cesslab/config-gen
+    docker tag $docker_org/config-gen:$default_image_tag cesslab/config-gen
 }
 
 install_cess_node()

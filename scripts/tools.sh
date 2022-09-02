@@ -84,18 +84,6 @@ upgrade_image()
     fi
 }
 
-set_profile()
-{
-    local to_set=$1
-    if [ x"$to_set" == x"dev" ] || [ x"$to_set" == x"test" ] || [ x"$to_set" == x"prod" ]; then
-        yq -i eval ".node.profile=\"$to_set\"" $config_file
-        log_success "the profile set to $to_set"
-        return 0
-    fi
-    log_err "invalid profile value"
-    return 1
-}
-
 set_extra_cmd_args()
 {
     local name=$1

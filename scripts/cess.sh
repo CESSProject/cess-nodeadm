@@ -673,15 +673,18 @@ function purge()
     fi
 
     if [ x"$1" = x"chain" ]; then
-        return purge_chain
+        purge_chain
+        return $?
     fi
 
     if [ x"$1" = x"scheduler" ]; then
-        return purge_scheduler
+        purge_scheduler
+        return $?
     fi
 
     if [ x"$1" = x"bucket" ]; then
-        return purge_bucket
+        purge_bucket
+        return $?
     fi
     help
     return 1

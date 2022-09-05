@@ -43,7 +43,7 @@ install_depenencies()
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y git yq curl wget net-tools build-essential kmod linux-headers-`uname -r` vim
+        apt-get install -y git jq yq curl wget net-tools build-essential kmod linux-headers-`uname -r` vim
         yq -V >/dev/null
         if [ $? -ne 0 ]; then
             wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
@@ -57,7 +57,7 @@ install_depenencies()
             exit 1
         fi
         log_info "------------Install depenencies--------------"
-        yum install -y git yq curl wget net-tools vim
+        yum install -y git jq yq curl wget net-tools vim
         yq -V >/dev/null
         if [ $? -ne 0 ]; then
             wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq

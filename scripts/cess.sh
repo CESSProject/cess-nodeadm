@@ -641,7 +641,7 @@ cess bucket usage (only on storage mode):
     register                   Register mining miner information to the chain
     increase [amount]          Increase the deposit of mining miner
     exit                       Exit the mining platform
-    withdraw [amount]          Redemption deposit
+    withdraw                   Redemption deposit
     state                      Query mining miner information
     update_address [ip:port]   Update the miner's access address
     update_income [account]    Update the miner's income account

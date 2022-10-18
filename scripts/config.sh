@@ -120,9 +120,11 @@ set_domain_name()
     done
 }
 
+default_chain_ws_url="ws://127.0.0.1:9944"
+
 set_chain_ws_url()
 {
-    local -r default="ws://127.0.0.1:9948"
+    local -r default=$default_chain_ws_url
     local to_set=""
     local current="`yq eval ".node.chainWsUrl" $config_file`"
     if [ x"$current" != x"" ]; then
@@ -136,6 +138,10 @@ set_chain_ws_url()
     elif [ x"$current" == x"" ]; then
         yq -i eval ".node.chainWsUrl=\"$default\"" $config_file
     fi
+}
+
+function assign_chain_ws_url_to_local() {
+    yq -i eval ".node.chainWsUrl=\"$default_chain_ws_url\"" $config_file
 }
 
 set_scheduler_stash_account()
@@ -391,6 +397,7 @@ function pull_images_by_mode()
         try_pull_image cess-chain
         try_pull_image cess-scheduler
     elif [ x"$mode" == x"storage" ]; then
+        try_pull_image cess-chain
         try_pull_image cess-bucket
     elif [ x"$mode" == x"watcher" ]; then
         try_pull_image cess-chain
@@ -424,7 +431,7 @@ function config_set_all()
         else
             set_domain_name
         fi
-        set_chain_ws_url
+        assign_chain_ws_url_to_local
         set_bucket_income_account
         set_bucket_sign_phrase
         set_bucket_disk_path
@@ -525,6 +532,11 @@ config_generate()
         fi
         cp $build_dir/scheduler/* $base_mode_path/scheduler/
     elif [ x"$mode" == x"storage" ]; then
+        if [ ! -d $base_mode_path/chain/ ]; then
+            mkdir -p $base_mode_path/chain/
+        fi
+        cp $build_dir/chain/* $base_mode_path/chain/
+
         if [ ! -d $base_mode_path/bucket/ ]; then
             mkdir -p $base_mode_path/bucket/
         fi

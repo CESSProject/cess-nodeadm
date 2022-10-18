@@ -42,6 +42,12 @@ start()
                 exit 1
             fi
         elif [ x"$mode" == x"storage" ]; then
+            start_chain
+            if [ $? -ne 0 ]; then
+                docker-compose -f $compose_yaml down
+                exit 1
+            fi
+
             start_bucket
             if [ $? -ne 0 ]; then
                 docker-compose -f $compose_yaml down
@@ -94,6 +100,16 @@ start()
         fi
 
     elif [ x"$mode" == x"storage" ]; then
+        if [ x"$1" = x"chain" ]; then
+            log_info "Start chain service"
+            start_chain
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+            log_success "Start chain service success"
+            return 0
+        fi
+
         if [ x"$1" = x"bucket" ]; then
             log_info "Start bucket service"
             start_bucket
@@ -460,17 +476,16 @@ EOF
     local scheduler_status="stop"
     local bucket_status="stop"
     local kaleido_status="stop"
-    if [ x"$mode" == x"authority" ] || [ x"$mode" == x"watcher" ]; then
-        check_docker_status chain
-        local res=$?
-        if [ $res -eq 0 ]; then
-            chain_status="running"
-        elif [ $res -eq 2 ]; then
-            chain_status="exited"
-        fi
-        echo "    chain                      ${chain_status}"
-    fi
 
+    check_docker_status chain
+    local res=$?
+    if [ $res -eq 0 ]; then
+        chain_status="running"
+    elif [ $res -eq 2 ]; then
+        chain_status="exited"
+    fi
+    echo "    chain                      ${chain_status}"
+    
     if [ x"$mode" == x"authority" ]; then
         check_docker_status scheduler
         res=$?
@@ -666,6 +681,7 @@ function purge()
             purge_chain
         elif [ x"$mode" == x"storage" ]; then
             purge_bucket
+            purge_chain
         elif [ x"$mode" == x"watcher" ]; then
             purge_chain
         fi

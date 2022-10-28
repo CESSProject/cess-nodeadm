@@ -663,6 +663,39 @@ cess bucket usage (only on storage mode):
 EOF
 }
 
+function scheduler_ops()
+{
+    if [ ! -f "$compose_yaml" ]; then
+        log_err "No configuration file, please set config"
+        return 1
+    fi
+
+    local volumes=$(yq eval ".services.scheduler.volumes" $base_dir/build/docker-compose.yaml | cut -d\' -f 2 | sed -n '1h;1!H;${g;s/\n/ -v /g;p;}')
+    if [ x"$volumes" != x"" ]; then
+        volumes="-v "$volumes
+    fi
+
+    local bucket_image=(`docker images | grep '^\b'cesslab/cess-scheduler'\b ' | grep 'latest'`)
+    bucket_image=${bucket_image[2]}
+    local cmd="docker run --rm --network=host $volumes $bucket_image ./cess-scheduler"
+    local -r cfg_arg="-c /opt/scheduler/config.toml"
+    case "$1" in
+        update_address)
+            $cmd update $2 $3 $cfg_arg
+            ;;
+        *)
+            scheduler_ops_help
+    esac
+}
+
+function scheduler_ops_help()
+{
+cat << EOF
+cess schduler usage (only on authority mode):
+    update_address <ipv4> <port>   Update scheduling service ip and port
+EOF
+}
+
 function purge()
 {
     log_info "WARNING: this operate can remove your data regarding program and can't revert."
@@ -752,6 +785,7 @@ Usage:
     
     config {...}                        configuration operations, use 'cess config help' for more details
     bucket {...}                        use 'cess bucket help' for more details
+    scheduler {...}                     use 'cess scheduler help' for more details
     tools {...}                         use 'cess tools help' for more details
 EOF
 }
@@ -787,6 +821,10 @@ case "$1" in
     bucket)
         shift
         bucket_ops $@
+        ;;
+    scheduler)
+        shift
+        scheduler_ops $@
         ;;
     config)
         shift

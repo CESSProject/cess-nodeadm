@@ -5,7 +5,7 @@ Official cess node service for running cess protocol.
 
 ### Install cess service
 ```shell
-sudo ./install.sh # Use 'sudo ./install.sh --region cn' to accelerate installation in some areas
+sudo ./install.sh # Use 'sudo ./install.sh
 ```
 
 ### Modify config.yaml

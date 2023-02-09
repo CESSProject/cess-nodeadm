@@ -337,26 +337,6 @@ function set_chain_pruning_mode()
     done
 }
 
-function ss()
-{
-    local img_tag="latest"
-    docker pull $docker_org/cess-chain:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-chain:$img_tag cesslab/cess-chain
-
-    docker pull $docker_org/cess-scheduler:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-scheduler:$img_tag cesslab/cess-scheduler
-
-    docker pull $docker_org/cess-bucket:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-bucket:$img_tag cesslab/cess-bucket
-
-    docker pull $docker_org/cess-kaleido:$img_tag
-    res=$(($?|$res))
-    docker tag $docker_org/cess-kaleido:$img_tag cesslab/cess-kaleido
-}
-
 function try_pull_image()
 {
     local img_name=$1
@@ -366,21 +346,23 @@ function try_pull_image()
         return 1
     fi
     
-    local docker_org="cesslab"
+    local org_name="cesslab"
     if [ x"$region" == x"cn" ]; then
-       docker_org=$aliyun_address/$docker_org
+       org_name=$aliyun_address/$org_name
     fi
     if [ -z $img_tag ]; then
-        img_tag=$default_image_tag
+        img_tag="latest"
+        if [ x"$profile" != x"prod" ]; then
+            img_tag="$profile"
+        fi
     fi
-    local img_id="$docker_org/$img_name:$img_tag"
+    local img_id="$org_name/$img_name:$img_tag"
     log_info "download image: $img_id"
     docker pull $img_id
     if [ $? -ne 0 ]; then
         log_err "download image $img_id failed, try again later"
         exit 1
-    fi    
-    docker tag $img_id cesslab/$img_name
+    fi
     return 0
 }
 

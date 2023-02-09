@@ -48,42 +48,6 @@ rotate_keys()
     echo $session_key
 }
 
-upgrade_image()
-{
-    if [ x"$1" == x"chain" ]; then
-        upgrade_docker_image cess-chain $2
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
-    elif [ x"$1" == x"scheduler" ]; then
-        upgrade_docker_image cess-scheduler $2
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
-    elif [ x"$1" == x"kaleido" ]; then
-        local tag=$2
-        if [ -z $tag ]; then
-            tag=$(yq eval ".kaleido.sgxDriver" $config_file)
-        fi
-        upgrade_docker_image cess-kaleido $tag
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
-    elif [ x"$1" == x"bucket" ]; then
-        upgrade_docker_image cess-bucket $2
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
-    elif [ x"$1" == x"config-gen" ]; then
-        upgrade_docker_image config-gen $2
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
-    else
-        tools_help
-    fi
-}
-
 set_extra_cmd_args()
 {
     local name=$1
@@ -113,9 +77,6 @@ tools()
             ;;
         space-info)
             space_info
-            ;;
-        upgrade-image)
-            upgrade_image $2 $3
             ;;
         profile)
             set_profile $2

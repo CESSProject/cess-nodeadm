@@ -26,37 +26,37 @@ start()
         if [ x"$mode" == x"authority" ]; then
             start_chain
             if [ $? -ne 0 ]; then
-                docker-compose -f $compose_yaml down
+                docker compose -f $compose_yaml down
                 exit 1
             fi
 
             start_scheduler
             if [ $? -ne 0 ]; then
-                docker-compose -f $compose_yaml down
+                docker compose -f $compose_yaml down
                 exit 1
             fi
 
             start_kaleido
             if [ $? -ne 0 ]; then
-                docker-compose -f $compose_yaml down
+                docker compose -f $compose_yaml down
                 exit 1
             fi
         elif [ x"$mode" == x"storage" ]; then
             start_chain
             if [ $? -ne 0 ]; then
-                docker-compose -f $compose_yaml down
+                docker compose -f $compose_yaml down
                 exit 1
             fi
 
             start_bucket
             if [ $? -ne 0 ]; then
-                docker-compose -f $compose_yaml down
+                docker compose -f $compose_yaml down
                 exit 1
             fi
         elif [ x"$mode" == x"watcher" ]; then
             start_chain
             if [ $? -ne 0 ]; then
-                docker-compose -f $compose_yaml down
+                docker compose -f $compose_yaml down
                 exit 1
             fi
         else
@@ -212,7 +212,7 @@ start_chain()
         return 1
     fi
 
-    docker-compose -f $compose_yaml up -d chain
+    docker compose -f $compose_yaml up -d chain
     if [ $? -ne 0 ]; then
         log_err "Start cess chain failed"
         return 1
@@ -243,7 +243,7 @@ start_scheduler()
         return 0
     fi
 
-    docker-compose -f $compose_yaml up -d scheduler
+    docker compose -f $compose_yaml up -d scheduler
     if [ $? -ne 0 ]; then
         log_err "Start cess scheduler failed"
         return 1
@@ -274,7 +274,7 @@ start_kaleido()
         return 0
     fi
 
-    docker-compose -f $compose_yaml up -d kaleido
+    docker compose -f $compose_yaml up -d kaleido
     if [ $? -ne 0 ]; then
         log_err "Start cess kaleido failed"
         return 1
@@ -305,7 +305,7 @@ start_bucket()
         return 0
     fi
 
-    docker-compose -f $compose_yaml up -d bucket
+    docker compose -f $compose_yaml up -d bucket
     if [ $? -ne 0 ]; then
         log_err "Start cess bucket failed"
         return 1

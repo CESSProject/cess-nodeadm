@@ -78,45 +78,7 @@ install_depenencies()
         fi
     fi
 
-    docker-compose -v
-    if [ $? -ne 0 ]; then
-        if [ x"$DISTRO" == x"Ubuntu" ]; then
-            apt-get install -y docker-compose
-            if [ $? -ne 0 ]; then
-                log_err "Install docker-compose failed"
-                exit 1
-            fi
-        elif [ x"$DISTRO" == x"CentOS" ]; then
-            yum install -y docker-compose
-            if [ $? -ne 0 ]; then
-                log_err "Install docker-compose failed"
-                exit 1
-            fi
-        fi
-    fi
-
     sysctl -w net.core.rmem_max=2500000
-}
-
-download_docker_images()
-{
-    if [ x"$update" == x"true" ]; then
-        return 0
-    fi
-
-    log_info "-------Download cess docker images----------"
-    
-    local docker_org="cesslab"
-    if [ x"$region" == x"cn" ]; then
-       docker_org=$aliyun_address/$docker_org
-    fi
-
-    docker pull $docker_org/config-gen:$default_image_tag
-    if [ $? -ne 0 ]; then
-        log_err "download image $docker_org/config-gen:$default_image_tag failed, try again later"
-        exit 1
-    fi
-    docker tag $docker_org/config-gen:$default_image_tag cesslab/config-gen
 }
 
 install_cess_node()
@@ -187,5 +149,4 @@ while true ; do
 done
 
 install_depenencies
-download_docker_images
 install_cess_node

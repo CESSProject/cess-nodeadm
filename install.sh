@@ -24,6 +24,7 @@ Usage:
     --update              update cess-nodeadm script and config
     --retain-config       retain old config when update cess-nodeadm, only valid on update option
     --region {cn|en}      use region to accelerate docker pull
+    --docker_mirror       optional, Aliyun or AzureChinaCloud
 EOF
 exit 0
 }
@@ -69,15 +70,17 @@ install_depenencies()
         exit 1
     fi
 
-    docker -v
-    if [ $? -ne 0 ]; then
-        curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
-        if [ $? -ne 0 ]; then
-            log_err "Install docker failed"
-            exit 1
-        fi
+    # install or update docker
+    mirror_opt=''
+    if [ ! -z $docker_mirror]; then
+        mirror_opt="--mirror $docker_mirror"
     fi
-
+    curl -fsSL https://get.docker.com | bash -s docker $mirror_opt
+    if [ $? -ne 0 ]; then
+        log_err "Install docker failed"
+        exit 1
+    fi
+    
     sysctl -w net.core.rmem_max=2500000
 }
 
@@ -128,6 +131,10 @@ while true ; do
                 help
             fi
             region=$2
+            shift 2
+            ;;
+        --docker_mirror)
+            docker_mirror=$2
             shift 2
             ;;
         --update)

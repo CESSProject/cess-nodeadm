@@ -341,10 +341,11 @@ function try_pull_image()
 {
     local img_name=$1
     local img_tag=$2
-    local ret=(`docker images | grep $img_name`)
-    if [ ${#ret[@]} -ne 0 ]; then
-        return 1
-    fi
+    # TODO: what is the purpose?
+    # local ret=(`docker images | grep $img_name`)
+    # if [ ${#ret[@]} -ne 0 ]; then
+    #     return 1
+    # fi
     
     local org_name="cesslab"
     if [ x"$region" == x"cn" ]; then
@@ -370,12 +371,12 @@ function pull_images_by_mode()
 {
     log_info "try pull images, node mode: $mode"
     if [ x"$mode" == x"authority" ]; then
-        # local tag=$(yq eval ".kaleido.sgxDriver" $config_file)
-        # if [ -z $tag ]; then
-        #     log_err "the sgx driver config is empty, please config first"
-        #     return 1
-        # fi
-        # try_pull_image cess-kaleido tag
+        local sgxDriver=$(yq eval ".kaleido.sgxDriver" $config_file)
+        if [ -z $sgxDriver ]; then
+            log_err "the sgx driver config is empty, please config first"
+            return 1
+        fi
+        try_pull_image cess-kaleido-$sgxDriver
         try_pull_image cess-chain
         try_pull_image cess-scheduler
     elif [ x"$mode" == x"storage" ]; then
@@ -461,20 +462,20 @@ config_chain_port()
 
 config_generate()
 {
-    # if [ x"$mode" == x"authority" ]; then
-    #     local sgx_devices_len=$( yq eval ".kaleido.sgxDevices | length" $config_file )
-    #     if [ $sgx_devices_len -eq 0 ]; then
-    #         $script_dir/install_sgx_driver.sh
-    #         ensure_installed_sgx_driver
-    #         if [ $? -ne 0 ]; then
-    #             log_err "Install SGX dirver failed"
-    #             exit 1
-    #         fi
-    #         local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
-    #         yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
-    #         yq -i eval ".kaleido.sgxDriver=\"${SGX_DRIVER}\"" $config_file
-    #     fi
-    # fi
+    if [ x"$mode" == x"authority" ]; then
+        local sgx_devices_len=$( yq eval ".kaleido.sgxDevices | length" $config_file )
+        if [ $sgx_devices_len -eq 0 ]; then
+            $script_dir/install_sgx_driver.sh
+            ensure_installed_sgx_driver
+            if [ $? -ne 0 ]; then
+                log_err "Install SGX dirver failed"
+                exit 1
+            fi
+            local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
+            yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
+            yq -i eval ".kaleido.sgxDriver=\"${SGX_DRIVER}\"" $config_file
+        fi
+    fi
 
     log_info "Start generate configurations and docker compose file"
     local cg_image="cesslab/config-gen:$default_image_tag"

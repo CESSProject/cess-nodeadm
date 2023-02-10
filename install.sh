@@ -44,11 +44,7 @@ install_depenencies()
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y git jq yq curl wget net-tools build-essential kmod linux-headers-`uname -r` vim
-        yq -V >/dev/null
-        if [ $? -ne 0 ]; then
-            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
-        fi
+        apt-get install -y awk git jq yq curl wget net-tools netstat build-essential kmod linux-headers-`uname -r`
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"
@@ -58,27 +54,47 @@ install_depenencies()
             exit 1
         fi
         log_info "------------Install depenencies--------------"
-        yum install -y git jq yq curl wget net-tools vim
-        yq -V >/dev/null
-        if [ $? -ne 0 ]; then
-            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+        yum install -y awk git jq yq curl wget net-tools netstat        
+    fi
+
+    need_install_yq=1
+    if command_exists yq; then
+        ya_ver=$(yq -V | awk '{print $NF}' | cut -d . -f 1,2)
+        if is_ver_a_ge_b $ya_ver 4.25; then
+            need_install_yq=0
         fi
-    fi    
+    fi
+    if [ $need_install_yq -eq 1 ]; then
+        wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+    fi
 
     if [ $? -ne 0 ]; then
         log_err "Install libs failed"
         exit 1
     fi
 
-    # install or update docker
-    mirror_opt=''
-    if [ ! -z $docker_mirror]; then
-        mirror_opt="--mirror $docker_mirror"
+    need_install_docker=1
+    if command_exists docker; then
+        current_docker_ver=$(docker version -f '{{.Server.Version}}')
+        log_info "current docker version: $current_docker_ver"
+        current_docker_ver=$(echo $current_docker_ver | cut -d . -f 1,2)
+        if is_ver_a_ge_b $current_docker_ver 20.10; then
+            need_install_docker=0
+            log_info "don't need install or upgrade docker"
+        fi
     fi
-    curl -fsSL https://get.docker.com | bash -s docker $mirror_opt
-    if [ $? -ne 0 ]; then
-        log_err "Install docker failed"
-        exit 1
+
+    if [ $need_install_docker -eq 1 ]; then
+        # install or update docker
+        mirror_opt=''
+        if [ ! -z $docker_mirror]; then
+            mirror_opt="--mirror $docker_mirror"
+        fi
+        curl -fsSL https://get.docker.com | bash -s docker $mirror_opt
+        if [ $? -ne 0 ]; then
+            log_err "Install docker failed"
+            exit 1
+        fi
     fi
     
     sysctl -w net.core.rmem_max=2500000

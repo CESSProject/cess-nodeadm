@@ -107,9 +107,14 @@ check_oot_driver
 
 if [[ $oot_driver_found == false && $dcap_driver_found == false ]]; then
     check_sgx
-    if [[ $install_dcap == "1" ]]; then
+    apt-get update > /dev/null && \
+    apt-get install -y dkms > /dev/null
+    # if [ $install_dcap -eq 1 ]; then
+    #     install_dcap_sgx_driver
+    # else
+    #     install_oot_sgx_driver
+    # fi
+    if ! install_oot_sgx_driver; then
         install_dcap_sgx_driver
-    else
-        install_oot_sgx_driver
     fi
 fi

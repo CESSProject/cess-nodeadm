@@ -265,3 +265,36 @@ function load_profile()
     log_err "the profile: $p of config file is invalid, use default value: $profile"
     return 1
 }
+
+function command_exists() {
+	command -v "$@" > /dev/null 2>&1
+}
+
+# is_ver_a_ge_b compares two CalVer (YY.MM) version strings. returns 0 (success)
+# if version A is newer or equal than version B, or 1 (fail) otherwise. Patch
+# releases and pre-release (-alpha/-beta) are not taken into account
+#
+# examples:
+#
+# is_ver_a_ge_b 20.10 19.03 // 0 (success)
+# is_ver_a_ge_b 20.10 20.10 // 0 (success)
+# is_ver_a_ge_b 19.03 20.10 // 1 (fail)
+function is_ver_a_ge_b() (
+	set +x
+
+	yy_a="$(echo "$1" | cut -d'.' -f1)"
+	yy_b="$(echo "$2" | cut -d'.' -f1)"
+    if [ "$yy_a" -lt "$yy_b" ]; then
+		return 1
+	fi
+	if [ "$yy_a" -gt "$yy_b" ]; then
+		return 0
+	fi
+	mm_a="$(echo "$1" | cut -d'.' -f2)"
+    mm_b="$(echo "$2" | cut -d'.' -f2)"
+    if [ "${mm_a}" -lt "${mm_b}" ]; then
+		return 1
+	fi
+
+	return 0
+)

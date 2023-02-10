@@ -430,7 +430,7 @@ function config_set_all()
     log_success "Set configurations successfully"
     
     # Generate configurations
-    config_generate
+    config_generate $@
 
     # Pull images
     pull_images_by_mode
@@ -445,7 +445,9 @@ config_conn_chain()
     fi
     yq -i eval ".node.chainWsUrl=\"$1\"" $config_file
     log_success "Set connected chain ws '$1' successfully"
-    config_generate
+    
+    shift
+    config_generate $@
 }
 
 config_chain_port()
@@ -457,11 +459,21 @@ config_chain_port()
     fi
     yq -i eval ".chain.port=$1" $config_file
     log_success "Set chain port '$1' successfully"
-    config_generate
+    shift
+    config_generate $@
 }
 
 config_generate()
 {
+    local cg_image="cesslab/config-gen:$default_image_tag"
+    while getopts ":p" opt; do
+        case ${opt} in
+            p )
+                docker pull $cg_image
+                ;;
+        esac
+    done
+
     if [ x"$mode" == x"authority" ]; then
         local sgx_devices_len=$( yq eval ".kaleido.sgxDevices | length" $config_file )
         if [ $sgx_devices_len -eq 0 ]; then
@@ -478,7 +490,6 @@ config_generate()
     fi
 
     log_info "Start generate configurations and docker compose file"
-    local cg_image="cesslab/config-gen:$default_image_tag"
 
     if [ ! -f "$config_file" ]; then
         log_err "config.yaml doesn't exists!"
@@ -547,7 +558,8 @@ config()
             config_show
             ;;
         set)
-            config_set_all
+            shift
+            config_set_all $@
             ;;
         conn-chain)
             shift
@@ -558,7 +570,8 @@ config()
             config_chain_port $@
             ;;
         generate)
-            config_generate
+            shift
+            config_generate $@
             ;;
         pull-image)
             pull_images_by_mode

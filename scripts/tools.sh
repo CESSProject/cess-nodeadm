@@ -8,7 +8,6 @@ cat << EOF
 cess tools usage:
     rotate-keys                                            generate session key of chain node
     space-info                                             show information about bucket disk
-    upgrade-image {chain|scheduler|bucket|config-gen}      upgrade one docker image
     help                                                   show help information
 EOF
 }

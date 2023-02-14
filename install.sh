@@ -44,7 +44,7 @@ install_depenencies()
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y git jq yq curl wget net-tools netstat build-essential kmod linux-headers-`uname -r`
+        apt-get install -y git jq curl wget net-tools build-essential linux-headers-`uname -r`
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"
@@ -54,7 +54,12 @@ install_depenencies()
             exit 1
         fi
         log_info "------------Install depenencies--------------"
-        yum install -y git jq yq curl wget net-tools netstat        
+        yum install -y git jq curl wget net-tools        
+    fi
+
+    if [ $? -ne 0 ]; then
+        log_err "Install libs failed"
+        exit 1
     fi
 
     need_install_yq=1
@@ -69,12 +74,12 @@ install_depenencies()
     fi
 
     if [ $? -ne 0 ]; then
-        log_err "Install libs failed"
+        log_err "Install yq failed"
         exit 1
     fi
 
     need_install_docker=1
-    if command_exists docker; then
+    if command_exists docker && [ -e /var/run/docker.sock ]; then
         current_docker_ver=$(docker version -f '{{.Server.Version}}')
         log_info "current docker version: $current_docker_ver"
         current_docker_ver=$(echo $current_docker_ver | cut -d . -f 1,2)
@@ -94,6 +99,27 @@ install_depenencies()
         if [ $? -ne 0 ]; then
             log_err "Install docker failed"
             exit 1
+        fi
+    fi
+
+    # check docker-compose-plugin
+    if [ x"$DISTRO" == x"Ubuntu" ]; then
+        local n=$(dpkg -l | grep docker-compose-plugin | wc -l)
+        if [ $n -eq 0 ]; then
+            apt-get install -y docker-compose-plugin
+            if [ $? -ne 0 ]; then
+                log_err "Install docker-compose-plugin failed"
+                exit 1
+            fi
+        fi
+    elif [ x"$DISTRO" == x"CentOS" ]; then        
+        local n=$(rpm -qa | grep docker-compose-plugin | wc -l)
+        if [ $n -eq 0 ]; then
+            yum install -y docker-compose-plugin
+            if [ $? -ne 0 ]; then
+                log_err "Install docker-compose-plugin failed"                
+                exit 1
+            fi
         fi
     fi
     

@@ -44,7 +44,7 @@ install_depenencies()
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y awk git jq yq curl wget net-tools netstat build-essential kmod linux-headers-`uname -r`
+        apt-get install -y git jq yq curl wget net-tools netstat build-essential kmod linux-headers-`uname -r`
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"
@@ -54,7 +54,7 @@ install_depenencies()
             exit 1
         fi
         log_info "------------Install depenencies--------------"
-        yum install -y awk git jq yq curl wget net-tools netstat        
+        yum install -y git jq yq curl wget net-tools netstat        
     fi
 
     need_install_yq=1

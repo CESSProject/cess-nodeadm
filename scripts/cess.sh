@@ -20,6 +20,8 @@ start()
         exit 1
     fi
 
+    docker compose -f $compose_yaml up -d watchtower
+
     if [ x"$1" = x"" ]; then
         log_info "Start cess"
         
@@ -137,6 +139,8 @@ start()
 
 stop()
 {
+    docker compose -f $compose_yaml down watchtower
+    
     if [ x"$1" = x"" ]; then
         log_info "Stop cess"
         stop_chain

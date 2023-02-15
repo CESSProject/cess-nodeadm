@@ -138,15 +138,15 @@ ensure_installed_sgx_driver()
         info="Your device exists: /dev/sgx/enclave /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx/enclave" "/dev/sgx/provision")
+        SGX_DEVICES=("/dev/sgx_enclave:/dev/sgx/enclave" "/dev/sgx/provision:/dev/sgx/provision")
         info="Your device exists: /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx/enclave" "/dev/sgx/provision")
+        SGX_DEVICES=("/dev/sgx_enclave:/dev/sgx/enclave" "/dev/sgx_provision:/dev/sgx/provision")
         info="Your device exists: /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
         SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx/provision")
+        SGX_DEVICES=("/dev/sgx_provision:/dev/sgx/provision")
         info="Your device exists: /dev/sgx_provision is related to the DCAP driver"
     elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ ! -c /dev/sgx_provision ] && [ -c /dev/isgx ]; then
         SGX_DRIVER="isgx"
@@ -230,7 +230,7 @@ function check_sgx {
 
     if [[ $sgx != "1" ]]; then
         # SGX is not supported
-        log_error "ERROR: SGX is not supported!"
+        log_err "ERROR: SGX is not supported!"
         exit 1
     fi
 

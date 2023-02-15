@@ -475,18 +475,18 @@ config_generate()
     done
 
     if [ x"$mode" == x"authority" ]; then
-        local sgx_devices_len=$( yq eval ".kaleido.sgxDevices | length" $config_file )
-        if [ $sgx_devices_len -eq 0 ]; then
-            $script_dir/install_sgx_driver.sh
-            ensure_installed_sgx_driver
-            if [ $? -ne 0 ]; then
-                log_err "Install SGX dirver failed"
-                exit 1
-            fi
-            local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
-            yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
-            yq -i eval ".kaleido.sgxDriver=\"${SGX_DRIVER}\"" $config_file
+        source $script_dir/install_sgx_driver.sh        
+        if ! install_sgx_driver; then
+            log_err "Install SGX dirver failed"
+            exit 1
         fi
+        if ! ensure_installed_sgx_driver; then
+            log_err "Install SGX dirver failed"
+            exit 1
+        fi
+        local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
+        yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
+        yq -i eval ".kaleido.sgxDriver=\"${SGX_DRIVER}\"" $config_file        
     fi
 
     log_info "Start generate configurations and docker compose file"

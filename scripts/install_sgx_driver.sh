@@ -1,31 +1,11 @@
 #!/bin/bash
 source /opt/cess/nodeadm/scripts/utils.sh
 
-ensure_root
-
-get_distro_name
-if [ x"$DISTRO" != x"Ubuntu" ]; then
-    log_err "Your system is not supported. Kaleido currently only supports Ubuntu 18.04/Ubuntu 20.04"
-    exit 1
-fi
-
-is_18=$(cat /etc/issue | grep 18.04)
-is_20=$(cat /etc/issue | grep 20.04)
-
-if [ x"$is_18" != x"" ]; then
-    dcap_driverurl="https://download.01.org/intel-sgx/latest/dcap-latest/linux/distro/ubuntu18.04-server/sgx_linux_x64_driver_1.41.bin"
-    dcap_driverbin="sgx_linux_x64_driver_1.41.bin"
-    isgx_driverurl="https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu18.04-server/sgx_linux_x64_driver_2.11.054c9c4c.bin"
-    isgx_driverbin="sgx_linux_x64_driver_2.11.054c9c4c.bin"
-elif [ x"$is_20" != x"" ]; then
-    dcap_driverurl="https://download.01.org/intel-sgx/latest/dcap-latest/linux/distro/ubuntu20.04-server/sgx_linux_x64_driver_1.41.bin"
-    dcap_driverbin="sgx_linux_x64_driver_1.41.bin"
-    isgx_driverurl="https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu20.04-server/sgx_linux_x64_driver_2.11.054c9c4c.bin"
-    isgx_driverbin="sgx_linux_x64_driver_2.11.054c9c4c.bin"
-else
-    log_err "Your system is not supported. Kaleido currently only supports Ubuntu 18.04/Ubuntu 20.04"
-    exit 1
-fi
+distro_ver=$(cat /etc/issue | awk 'NF {print $2}' | cut -d . -f 1,2)
+dcap_driverbin="sgx_linux_x64_driver_1.41.bin"
+dcap_driverurl="https://download.01.org/intel-sgx/latest/dcap-latest/linux/distro/ubuntu$distro_ver-server/$dcap_driverbin"
+isgx_driverbin="sgx_linux_x64_driver_2.11.54c9c4c.bin"                
+isgx_driverurl="https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu$distro_ver-server/$isgx_driverbin"
 
 function try_uninstall_dirver() {
     if [ -f /opt/intel/sgxdriver/uninstall.sh ]; then
@@ -102,19 +82,39 @@ function install_oot_sgx_driver() {
     return 0
 }
 
-check_dcap_driver
-check_oot_driver
 
-if [[ $oot_driver_found == false && $dcap_driver_found == false ]]; then
-    check_sgx
-    apt-get update > /dev/null && \
-    apt-get install -y dkms > /dev/null
-    # if [ $install_dcap -eq 1 ]; then
-    #     install_dcap_sgx_driver
-    # else
-    #     install_oot_sgx_driver
-    # fi
-    if ! install_oot_sgx_driver; then
-        install_dcap_sgx_driver
+function install_sgx_driver() {
+    ensure_root
+
+    get_distro_name
+    if [ x"$DISTRO" != x"Ubuntu" ]; then
+        log_err "Your system is not supported. Kaleido currently only supports Ubuntu 18.04|20.04|22.04"
+        exit 1
     fi
-fi
+
+    if [ $distro_ver != "18.04" ] && [ $distro_ver != "20.04" ] && [ $distro_ver != "22.04" ]; then
+        log_err "Your system version $distro_ver is not supported. Kaleido currently only supports Ubuntu 18.04|20.04|22.04"
+        exit 1
+    fi
+
+    check_sgx
+    check_oot_driver
+    check_dcap_driver
+
+    echo $oot_driver_found $dcap_driver_found
+
+    if [[ $oot_driver_found == false && $dcap_driver_found == false ]]; then
+        apt-get update > /dev/null && \
+        apt-get install -y dkms > /dev/null
+        # if [ $install_dcap -eq 1 ]; then
+        #     install_dcap_sgx_driver
+        # else
+        #     install_oot_sgx_driver
+        # fi
+        if ! install_oot_sgx_driver; then
+            return install_dcap_sgx_driver
+        fi
+        return 1
+    fi
+    return 0
+}

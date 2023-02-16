@@ -100,21 +100,12 @@ function install_sgx_driver() {
     check_sgx
     check_oot_driver
     check_dcap_driver
-
-    echo $oot_driver_found $dcap_driver_found
-
     if [[ $oot_driver_found == false && $dcap_driver_found == false ]]; then
         apt-get update > /dev/null && \
         apt-get install -y dkms > /dev/null
-        # if [ $install_dcap -eq 1 ]; then
-        #     install_dcap_sgx_driver
-        # else
-        #     install_oot_sgx_driver
-        # fi
         if ! install_oot_sgx_driver; then
             return install_dcap_sgx_driver
         fi
-        return 1
     fi
     return 0
 }

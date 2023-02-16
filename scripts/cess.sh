@@ -139,7 +139,8 @@ start()
 
 stop()
 {
-    docker compose -f $compose_yaml down watchtower
+    docker stop watchtower &>/dev/null
+    docker rm watchtower &>/dev/null
     
     if [ x"$1" = x"" ]; then
         log_info "Stop cess"

@@ -480,10 +480,6 @@ config_generate()
             log_err "Install SGX dirver failed"
             exit 1
         fi
-        if ! ensure_installed_sgx_driver; then
-            log_err "Install SGX dirver failed"
-            exit 1
-        fi
         local str=$(printf "\"%s\"," "${SGX_DEVICES[@]}")
         yq -i eval ".kaleido.sgxDevices=[${str%,}]" $config_file
         yq -i eval ".kaleido.sgxDriver=\"${SGX_DRIVER}\"" $config_file        

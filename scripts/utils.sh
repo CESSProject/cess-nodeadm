@@ -128,71 +128,31 @@ get_distro_name()
 
 SGX_DRIVER=""
 SGX_DEVICES=()
-ensure_installed_sgx_driver()
-{
-    local info=""
-    local ret=0
-    if [ -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
-        SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx/enclave" "/dev/sgx/provision")
-        info="Your device exists: /dev/sgx/enclave /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
-    elif [ ! -L /dev/sgx/enclave ] && [ -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
-        SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx_enclave:/dev/sgx/enclave" "/dev/sgx/provision:/dev/sgx/provision")
-        info="Your device exists: /dev/sgx/provision /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
-    elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
-        SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx_enclave:/dev/sgx/enclave" "/dev/sgx_provision:/dev/sgx/provision")
-        info="Your device exists: /dev/sgx_enclave /dev/sgx_provision is related to the DCAP driver"
-    elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ -c /dev/sgx_provision ] && [ ! -c /dev/isgx ]; then
-        SGX_DRIVER="dcap"
-        SGX_DEVICES=("/dev/sgx_provision:/dev/sgx/provision")
-        info="Your device exists: /dev/sgx_provision is related to the DCAP driver"
-    elif [ ! -L /dev/sgx/enclave ] && [ ! -L /dev/sgx/provision ] && [ ! -c /dev/sgx_enclave ] && [ ! -c /dev/sgx_provision ] && [ -c /dev/isgx ]; then
-        SGX_DRIVER="isgx"
-        SGX_DEVICES=("/dev/isgx")
-        info="Your device exists: /dev/isgx is related to the isgx driver"
-    else
-        info="The DCAP/isgx driver file was not found, please check the driver installation logs!"
-        ret=1
-    fi
-    if [ x"$1" == x"" ]; then
-        log_info "$info"
-        if [ $ret -eq 0 ]; then
-            log_info "Your machine's SGX driver is: $SGX_DRIVER"
-        fi
-    fi
-    return $ret
-}
-
-oot_driver_found=false
 
 function check_oot_driver {
     if [[ ! -e /sys/module/isgx/version ]] ; then
-        oot_driver_found=false
-    else
-        oot_driver_found=true
-        echo "SGX-driver already installed."
-        if [[ ! -e /dev/isgx ]] ; then
-            log_err "SGX driver is installed but no SGX device - SGX not enabled?"
-            exit 1
-        fi
+        return 1
     fi
+    if [[ ! -e /dev/isgx ]] ; then
+        log_err "SGX driver is installed but no SGX device - SGX not enabled?"
+        exit 1
+    fi
+    SGX_DRIVER="isgx"
+    SGX_DEVICES=("/dev/isgx")
+    return 0
 }
-
-dcap_driver_found=false
 
 function check_dcap_driver {
     if [[ ! -e /sys/module/intel_sgx/version ]] ; then
-        dcap_driver_found=false
-    else
-        dcap_driver_found=true
-        echo "DCAP SGX-driver already installed."
-        if [[ ! -e /dev/sgx ]] ; then
-            log_err "DCAP SGX driver is installed but no SGX device - SGX not enabled?"
-            exit 1
-        fi
+        return 1
+    fi    
+    if [[ ! -e /dev/sgx ]] ; then
+        log_err "DCAP SGX driver is installed but no SGX device - SGX not enabled?"
+        exit 1
     fi
+    SGX_DRIVER="dcap"
+    SGX_DEVICES=("/dev/sgx/enclave" "/dev/sgx/provision")
+    return 0
 }
 
 install_dcap=0

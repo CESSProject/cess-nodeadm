@@ -97,15 +97,25 @@ function install_sgx_driver() {
         exit 1
     fi
 
-    check_sgx
-    check_oot_driver
-    check_dcap_driver
-    if [[ $oot_driver_found == false && $dcap_driver_found == false ]]; then
-        apt-get update > /dev/null && \
-        apt-get install -y dkms > /dev/null
-        if ! install_oot_sgx_driver; then
-            return install_dcap_sgx_driver
+    check_sgx  # exit if SGX is not supported
+
+    if ! check_oot_driver; then
+        if ! check_dcap_driver; then
+            apt-get update > /dev/null && \
+            apt-get install -y dkms > /dev/null
+            if ! install_oot_sgx_driver; then
+                install_dcap_sgx_driver
+            fi
         fi
     fi
-    return 0
+    if [ -z $SGX_DRIVER ]; then
+        if ! check_oot_driver; then
+            check_dcap_driver
+        fi
+    fi
+    if [ ! -z $SGX_DRIVER ]; then
+        log_info "Your machine's SGX driver is: $SGX_DRIVER"
+        return 0
+    fi
+    return 1
 }

@@ -44,7 +44,7 @@ install_depenencies()
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y git jq curl wget net-tools build-essential linux-headers-`uname -r`
+        apt-get install -y git jq curl wget net-tools
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"
@@ -152,6 +152,7 @@ install_cess_node()
         chown root:root $install_dir/config.yaml
         chmod 0600 $install_dir/config.yaml
         cp -r $local_base_dir/scripts $install_dir/
+        cp -r $local_base_dir/sgx-software-enable $install_dir/
 
         yq -i eval ".node.region=\"$region\"" $config_file
     fi

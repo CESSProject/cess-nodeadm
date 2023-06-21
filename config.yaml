@@ -13,12 +13,6 @@ chain:
   name: "cess"
   ## the port of chain node
   port: 30336
-  
-## scheduler configurations
-scheduler:
-  port: 15000
-  stashAccount: ""
-  controllerPhrase: ""
 
 ## bucket configurations
 bucket:
@@ -30,6 +24,8 @@ bucket:
 
 ## kaleido configurations
 kaleido:
-  sgxDriver: ""
-  sgxDevices: []
-  port: 8080
+  agentPort: 10010
+  kaleidoPort: 4001
+  bootPeerIds: ""
+  stashAccount: ""
+  controllerPhrase: ""

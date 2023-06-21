@@ -20,595 +20,56 @@ start()
         exit 1
     fi
 
-    docker compose -f $compose_yaml up -d watchtower
-
-    if [ x"$1" = x"" ]; then
-        log_info "Start cess"
-        
-        if [ x"$mode" == x"authority" ]; then
-            start_chain
-            if [ $? -ne 0 ]; then
-                docker compose -f $compose_yaml down
-                exit 1
-            fi
-
-            start_scheduler
-            if [ $? -ne 0 ]; then
-                docker compose -f $compose_yaml down
-                exit 1
-            fi
-
-            start_kaleido
-            if [ $? -ne 0 ]; then
-                docker compose -f $compose_yaml down
-                exit 1
-            fi
-        elif [ x"$mode" == x"storage" ]; then
-            start_chain
-            if [ $? -ne 0 ]; then
-                docker compose -f $compose_yaml down
-                exit 1
-            fi
-
-            start_bucket
-            if [ $? -ne 0 ]; then
-                docker compose -f $compose_yaml down
-                exit 1
-            fi
-        elif [ x"$mode" == x"watcher" ]; then
-            start_chain
-            if [ $? -ne 0 ]; then
-                docker compose -f $compose_yaml down
-                exit 1
-            fi
-        else
-            log_err "the config file may be invalid, please reconfig again"
-            exit 1
-        fi        
-
-        log_success "Start cess success"
-        return 0
-    fi
-
-    if [ x"$mode" == x"authority" ]; then
-        if [ x"$1" = x"chain" ]; then
-            log_info "Start chain service"
-            start_chain
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-            log_success "Start chain service success"
-            return 0
-        fi
-
-        if [ x"$1" = x"scheduler" ]; then
-            log_info "Start scheduler service"
-            start_scheduler
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-            log_success "Start scheduler service success"
-            return 0
-        fi
-
-        if [ x"$1" = x"kaleido" ]; then
-            log_info "Start kaleido service"
-            start_kaleido
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-            log_success "Start kaleido service success"
-            return 0
-        fi
-
-    elif [ x"$mode" == x"storage" ]; then
-        if [ x"$1" = x"chain" ]; then
-            log_info "Start chain service"
-            start_chain
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-            log_success "Start chain service success"
-            return 0
-        fi
-
-        if [ x"$1" = x"bucket" ]; then
-            log_info "Start bucket service"
-            start_bucket
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-            log_success "Start bucket service success"
-            return 0
-        fi
-    elif [ x"$mode" == x"watcher" ]; then
-        if [ x"$1" = x"chain" ]; then
-            log_info "Start chain service"
-            start_chain
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-            log_success "Start chain service success"
-            return 0
-        fi
-    fi
-
-    log_err "unsupport operation on $mode mode"
-    return 1
+    docker compose -f $compose_yaml up -d $1
+    return $?
 }
 
 stop()
 {
-    docker stop watchtower &>/dev/null
-    docker rm watchtower &>/dev/null
-    
-    if [ x"$1" = x"" ]; then
-        log_info "Stop cess"
-        stop_chain
-        stop_scheduler
-        stop_kaleido
-        stop_bucket
-        log_success "Stop cess success"
-        return 0
-    fi
-
-    if [ x"$1" = x"chain" ]; then
-        log_info "Stop chain service"
-        stop_chain
-        log_success "Stop chain service success"
-        return 0
-    fi
-
-    if [ x"$1" = x"bucket" ]; then
-        log_info "Stop bucket service"
-        stop_bucket
-        log_success "Stop bucket service success"
-        return 0
-    fi
-
-    if [ x"$1" = x"scheduler" ]; then
-        log_info "Stop scheduler service"
-        stop_scheduler
-        log_success "Stop scheduler service success"
-        return 0
-    fi
-
-    if [ x"$1" == x"kaleido" ]; then
-        log_info "Stop kaleido service"
-        stop_kaleido
-        log_success "Stop kaleido service success"
-        return 0
-    fi
-
-    help
-    return 1
-}
-
-start_chain()
-{
     if [ ! -f "$compose_yaml" ]; then
         log_err "No configuration file, please set config"
-        return 1
+        exit 1
     fi
 
-    check_docker_status chain
-    if [ $? -eq 0 ]; then
-        return 0
-    fi
-
-    local chain_port=`yq eval ".chain.port" $config_file`
-    if [ x"$chain_port" = x"" ] || [ x"$chain_port" = x"null" ]; then
-        chain_port=30336
-    fi
-
-    if [ $chain_port -lt 0 ] || [ $chain_port -gt 65535 ]; then
-        log_err "The range of chain port is 0 ~ 65535"
-        return 1
-    fi
-
-    local res=0
-    check_port $chain_port
-    res=$(($?|$res))
-    check_port 9933  #check the RPC port
-    res=$(($?|$res))
-    check_port 9944  #check the WS port
-    res=$(($?|$res))
-    if [ $res -ne 0 ]; then
-        return 1
-    fi
-
-    docker compose -f $compose_yaml up -d chain
-    if [ $? -ne 0 ]; then
-        log_err "Start cess chain failed"
-        return 1
-    fi
-    return 0
+    docker compose -f $compose_yaml stop $1
+    return $?
 }
 
-stop_chain()
-{
-    check_docker_status chain
-    if [ $? -ne 1 ]; then
-        log_info "Stopping cess chain service"
-        docker stop chain &>/dev/null
-        docker rm chain &>/dev/null
-    fi
-    return 0
-}
-
-start_scheduler()
-{
+restart() {
     if [ ! -f "$compose_yaml" ]; then
         log_err "No configuration file, please set config"
-        return 1
+        exit 1
     fi
 
-    check_docker_status scheduler
-    if [ $? -eq 0 ]; then
-        return 0
-    fi
-
-    docker compose -f $compose_yaml up -d scheduler
-    if [ $? -ne 0 ]; then
-        log_err "Start cess scheduler failed"
-        return 1
-    fi
-    return 0
-}
-
-stop_scheduler()
-{
-    check_docker_status scheduler
-    if [ $? -ne 1 ]; then
-        log_info "Stopping cess scheduler service"
-        docker stop scheduler &>/dev/null
-        docker rm scheduler &>/dev/null
-    fi
-    return 0
-}
-
-start_kaleido()
-{
-    if [ ! -f "$compose_yaml" ]; then
-        log_err "No configuration file, please set config"
-        return 1
-    fi
-
-    check_docker_status kaleido
-    if [ $? -eq 0 ]; then
-        return 0
-    fi
-
-    docker compose -f $compose_yaml up -d kaleido
-    if [ $? -ne 0 ]; then
-        log_err "Start cess kaleido failed"
-        return 1
-    fi
-    return 0
-}
-
-stop_kaleido()
-{
-    check_docker_status kaleido
-    if [ $? -ne 1 ]; then
-        log_info "Stopping cess kaleido service"
-        docker stop kaleido &>/dev/null
-        docker rm kaleido &>/dev/null
-    fi
-    return 0
-}
-
-start_bucket()
-{
-    if [ ! -f "$compose_yaml" ]; then
-        log_err "No configuration file, please set config"
-        return 1
-    fi
-
-    check_docker_status bucket
-    if [ $? -eq 0 ]; then
-        return 0
-    fi
-
-    docker compose -f $compose_yaml up -d bucket
-    if [ $? -ne 0 ]; then
-        log_err "Start cess bucket failed"
-        return 1
-    fi
-    return 0
-}
-
-stop_bucket()
-{
-    check_docker_status bucket
-    if [ $? -ne 1 ]; then
-        log_info "Stopping cess bucket service"
-        docker stop bucket &>/dev/null
-        docker rm bucket &>/dev/null
-    fi
-    return 0
+    docker compose -f $compose_yaml restart $1
+    return $?
 }
 
 reload() {
+    if [ ! -f "$compose_yaml" ]; then
+        log_err "No configuration file, please set config"
+        exit 1
+    fi
+
     if [ x"$1" = x"" ]; then
         log_info "Reload all service"
-        stop
-        start
-        log_success "Reload all service success"
-        return 0
+        docker compose -f $compose_yaml down
+        if [ $? -eq 0 ]; then
+            docker compose -f $compose_yaml up -d
+        fi
+        return $?
+    fi    
+
+    docker compose -f $compose_yaml rm -fs $1
+    if [ $? -eq 0 ]; then
+        docker compose -f $compose_yaml up -d        
     fi
-
-    if [ x"$1" = x"chain" ]; then
-        log_info "Reload chain service"
-
-        stop_chain
-        start_chain
-
-        log_success "Reload chain service success"
-        return 0
-    fi
-
-    if [ x"$1" = x"scheduler" ]; then
-        log_info "Reload scheduler service"
-        
-        stop_scheduler
-        start_scheduler
-
-        log_success "Reload scheduler service success"
-        return 0
-    fi
-
-    if [ x"$1" = x"kaleido" ]; then
-        log_info "Reload kaleido service"
-        
-        stop_kaleido
-        start_kaleido
-
-        log_success "Reload kaleido service success"
-        return 0
-    fi
-
-    if [ x"$1" = x"bucket" ]; then
-        log_info "Reload bucket service"
-        
-        stop_bucket
-        start_bucket
-
-        log_success "Reload bucket service success"
-        return 0
-    fi
-
-    help
-    return 1
+    return $?
 }
-
-########################################logs################################################
-
-logs_help()
-{
-cat << EOF
-Usage: cess logs [OPTIONS] {chain|scheduler|bucket}
-
-Fetch the logs of a service
-
-Options:
-      --details        Show extra details provided to logs
-  -f, --follow         Follow log output
-      --since string   Show logs since timestamp (e.g. 2013-01-02T13:23:37) or relative (e.g. 42m for 42 minutes)
-      --tail string    Number of lines to show from the end of the logs (default "all")
-  -t, --timestamps     Show timestamps
-      --until string   Show logs before a timestamp (e.g. 2013-01-02T13:23:37) or relative (e.g. 42m for 42 minutes)
-EOF
-}
-
-logs()
-{
-    local name="${!#}"
-    local array=( "$@" )
-    local logs_help_flag=0
-    unset "array[${#array[@]}-1]"
-
-    if [ x"$name" == x"chain" ]; then
-        check_docker_status chain
-        if [ $? -eq 1 ]; then
-            log_info "Service cess chain is not started now"
-            return 0
-        fi
-        docker logs ${array[@]} -f chain
-        logs_help_flag=$?
-    elif [ x"$name" == x"scheduler" ]; then
-        check_docker_status scheduler
-        if [ $? -eq 1 ]; then
-            log_info "Service cess scheduler is not started now"
-            return 0
-        fi
-        docker logs ${array[@]} -f scheduler
-        logs_help_flag=$?
-    elif [ x"$name" == x"bucket" ]; then        
-        check_docker_status bucket
-        if [ $? -eq 1 ]; then
-            log_info "Service cess bucket is not started now"
-            return 0
-        fi
-        docker logs ${array[@]} -f bucket
-        logs_help_flag=$?
-    elif [ x"$name" == x"kaleido" ]; then        
-        check_docker_status kaleido
-        if [ $? -eq 1 ]; then
-            log_info "Service cess kaleido is not started now"
-            return 0
-        fi
-        docker logs ${array[@]} -f kaleido
-        logs_help_flag=$?    
-    else
-        logs_help
-        return 1
-    fi
-
-    if [ $logs_help_flag -ne 0 ]; then
-        logs_help
-        return 1
-    fi
-}
-
-#######################################status################################################
 
 status()
 {
-    if [ x"$1" == x"chain" ]; then
-        chain_status
-    elif [ x"$1" == x"scheduler" ]; then
-        scheduler_status
-    elif [ x"$1" == x"bucket" ]; then
-        bucket_status
-    elif [ x"$1" == x"kaleido" ]; then
-        kaleido_status
-    elif [ x"$1" == x"" ]; then
-        all_status
-    else
-        help
-    fi
-}
-
-all_status()
-{
-cat << EOF
------------------------------------------
-    Service                    Status
------------------------------------------
-EOF
-    local chain_status="stop"
-    local scheduler_status="stop"
-    local bucket_status="stop"
-    local kaleido_status="stop"
-
-    check_docker_status chain
-    local res=$?
-    if [ $res -eq 0 ]; then
-        chain_status="running"
-    elif [ $res -eq 2 ]; then
-        chain_status="exited"
-    fi
-    echo "    chain                      ${chain_status}"
-    
-    if [ x"$mode" == x"authority" ]; then
-        check_docker_status scheduler
-        res=$?
-        if [ $res -eq 0 ]; then
-            scheduler_status="running"
-        elif [ $res -eq 2 ]; then
-            scheduler_status="exited"
-        fi
-        echo "    scheduler                  ${scheduler_status}"
-
-        check_docker_status kaleido
-        res=$?
-        if [ $res -eq 0 ]; then
-            kaleido_status="running"
-        elif [ $res -eq 2 ]; then
-            kaleido_status="exited"
-        fi
-        echo "    kaleido                    ${kaleido_status}"
-    fi
-
-    if [ x"$mode" == x"storage" ]; then
-        check_docker_status bucket
-        res=$?
-        if [ $res -eq 0 ]; then
-            bucket_status="running"
-        elif [ $res -eq 2 ]; then
-            bucket_status="exited"
-        fi
-        echo "    bucket                     ${bucket_status}"
-    fi
-    
-cat << EOF
------------------------------------------
-EOF
-}
-
-chain_status()
-{
-    local chain_status="stop"
-
-    check_docker_status chain
-    local res=$?
-    if [ $res -eq 0 ]; then
-        chain_status="running"
-    elif [ $res -eq 2 ]; then
-        chain_status="exited"
-    fi
-
-cat << EOF
------------------------------------------
-    Service                    Status
------------------------------------------
-    chain                      ${chain_status}
------------------------------------------
-EOF
-}
-
-scheduler_status()
-{
-    local status="stop"
-
-    check_docker_status scheduler
-    res=$?
-    if [ $res -eq 0 ]; then
-        status="running"
-    elif [ $res -eq 2 ]; then
-        status="exited"
-    fi
-
-cat << EOF
------------------------------------------
-    Service                    Status
------------------------------------------
-    scheduler                  ${status}
------------------------------------------
-EOF
-}
-
-kaleido_status()
-{
-    local status="stop"
-
-    check_docker_status kaleido
-    res=$?
-    if [ $res -eq 0 ]; then
-        status="running"
-    elif [ $res -eq 2 ]; then
-        status="exited"
-    fi
-
-cat << EOF
------------------------------------------
-    Service                    Status
------------------------------------------
-    kaleido                    ${status}
------------------------------------------
-EOF
-}
-
-bucket_status()
-{
-    local status="stop"
-
-    check_docker_status bucket
-    res=$?
-    if [ $res -eq 0 ]; then
-        status="running"
-    elif [ $res -eq 2 ]; then
-        status="exited"
-    fi
-
-cat << EOF
------------------------------------------
-    Service                    Status
------------------------------------------
-    bucket                     ${status}
------------------------------------------
-EOF
+    docker ps -a --format 'table {{.Names}}\t{{.Status}}'
 }
 
 bucket_ops()
@@ -668,39 +129,6 @@ cess bucket usage (only on storage mode):
 EOF
 }
 
-function scheduler_ops()
-{
-    if [ ! -f "$compose_yaml" ]; then
-        log_err "No configuration file, please set config"
-        return 1
-    fi
-
-    local volumes=$(yq eval ".services.scheduler.volumes" $base_dir/build/docker-compose.yaml | cut -d\' -f 2 | sed -n '1h;1!H;${g;s/\n/ -v /g;p;}')
-    if [ x"$volumes" != x"" ]; then
-        volumes="-v "$volumes
-    fi
-
-    local bucket_image=(`docker images | grep '^\b'cesslab/cess-scheduler'\b ' | grep 'latest'`)
-    bucket_image=${bucket_image[2]}
-    local cmd="docker run --rm --network=host $volumes $bucket_image ./cess-scheduler"
-    local -r cfg_arg="-c /opt/scheduler/config.toml"
-    case "$1" in
-        update_address)
-            $cmd update $2 $3 $cfg_arg
-            ;;
-        *)
-            scheduler_ops_help
-    esac
-}
-
-function scheduler_ops_help()
-{
-cat << EOF
-cess schduler usage (only on authority mode):
-    update_address <ipv4> <port>   Update scheduling service ip and port
-EOF
-}
-
 function purge()
 {
     log_info "WARNING: this operate can remove your data regarding program and can't revert."
@@ -753,15 +181,6 @@ function purge_chain()
     fi
 }
 
-function purge_scheduler()
-{
-    stop_scheduler
-    rm -rf /opt/cess/$mode/scheduler/*
-    if [ $? -eq 0 ]; then
-        log_success "purge scheduler data success"
-    fi
-}
-
 function purge_bucket()
 {
     stop_bucket
@@ -777,20 +196,19 @@ help()
 {
 cat << EOF
 Usage:
-    help                                show help information
-    version                             show version
+    help                                      show help information
+    version                                   show version
 
-    start {chain|scheduler|bucket}      start all cess service
-    stop {chain|scheduler|bucket}       stop all cess service or stop one service
+    start {chain|kld-sgx|kld-agent|bucket}    start all or one cess service
+    stop {chain|kld-sgx|kld-agent|bucket}     stop all or one cess service
+    reload {chain|kld-sgx|kld-agent|bucket}   reload (stop remove then start) all or one service
+    restart {chain|kld-sgx|kld-agent|bucket}  restart all or one cess service
 
-    status {chain|scheduler|bucket}     check status or reload one service status
-    reload {chain|scheduler|bucket}     reload all service or reload one service
-    logs {chain|scheduler|bucket}       track service logs, ctrl-c to exit. use 'cess logs help' for more details
-    purge {chain|scheduler|bucket}      remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
+    status                              check service status
+    purge {chain|kaleido|bucket}        remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
     
     config {...}                        configuration operations, use 'cess config help' for more details
     bucket {...}                        use 'cess bucket help' for more details
-    scheduler {...}                     use 'cess scheduler help' for more details
     tools {...}                         use 'cess tools help' for more details
 EOF
 }
@@ -807,6 +225,10 @@ case "$1" in
         ;;
     stop)
         stop $2
+        ;;
+    restart)
+        shift
+        reload $@
         ;;
     reload)
         shift
@@ -826,10 +248,6 @@ case "$1" in
     bucket)
         shift
         bucket_ops $@
-        ;;
-    scheduler)
-        shift
-        scheduler_ops $@
         ;;
     config)
         shift

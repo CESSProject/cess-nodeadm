@@ -84,31 +84,38 @@ bucket_ops()
         volumes="-v "$volumes
     fi
 
-    local bucket_image=(`docker images | grep '^\b'cesslab/cess-bucket'\b ' | grep 'latest'`)
-    bucket_image=${bucket_image[2]}
+    local img_tag="latest"
+    if [ x"$profile" != x"prod" ]; then
+        img_tag="$profile"
+    fi
+    local bucket_image="cesslab/cess-bucket:$img_tag"    
     local cmd="docker run --rm --network=host $volumes $bucket_image ./cess-bucket"
     local -r cfg_arg="-c /opt/bucket/config.toml"
     case "$1" in
-        register)
-            $cmd register $cfg_arg
-            ;;
         increase)
-            $cmd increase $2 $cfg_arg
+            $cmd $1 $2 $cfg_arg
             ;;
         exit)
-            $cmd exit $cfg_arg
+            $cmd $1 $cfg_arg
             ;;
         withdraw)
-            $cmd withdraw $2 $cfg_arg
+            $cmd $1 $cfg_arg
             ;;
-        state)
-            $cmd state $cfg_arg
+        stat)
+            $cmd $1 $cfg_arg
             ;;
-        update_address)
-            $cmd update_address $2 $cfg_arg
+        reward)
+            $cmd $1 $2 $cfg_arg
             ;;
-        update_income)
-            $cmd update_income $2 $cfg_arg
+        claim)
+            $cmd $1 $2 $cfg_arg
+            ;;
+        update)
+            if [ "$2" == "earnings" ]; then
+                $cmd $1 $2 $3 $cfg_arg
+            else
+                bucket_ops_help
+            fi
             ;;
         *)
             bucket_ops_help
@@ -119,13 +126,13 @@ bucket_ops_help()
 {
 cat << EOF
 cess bucket usage (only on storage mode):
-    register                   Register mining miner information to the chain
-    increase [amount]          Increase the deposit of mining miner
-    exit                       Exit the mining platform
-    withdraw                   Redemption deposit
-    state                      Query mining miner information
-    update_address [ip:port]   Update the miner's access address
-    update_income [account]    Update the miner's income account
+    increase [amount]                   Increase the stakes of storage miner
+    exit                                Unregister the storage miner role
+    withdraw                            Withdraw stakes
+    stat                                Query storage miner information
+    reward                              Query reward information
+    claim                               Claim reward    
+    update earnings [wallet account]    Update earnings account 
 EOF
 }
 
@@ -143,7 +150,6 @@ function purge()
 
     if [ x"$1" = x"" ]; then
         if [ x"$mode" == x"authority" ]; then
-            purge_scheduler
             purge_chain
         elif [ x"$mode" == x"storage" ]; then
             purge_bucket
@@ -159,11 +165,6 @@ function purge()
         return $?
     fi
 
-    if [ x"$1" = x"scheduler" ]; then
-        purge_scheduler
-        return $?
-    fi
-
     if [ x"$1" = x"bucket" ]; then
         purge_bucket
         return $?
@@ -174,7 +175,7 @@ function purge()
 
 function purge_chain()
 {
-    stop_chain
+    stop chain
     rm -rf /opt/cess/$mode/chain/*
     if [ $? -eq 0 ]; then
         log_success "purge chain data success"
@@ -183,7 +184,7 @@ function purge_chain()
 
 function purge_bucket()
 {
-    stop_bucket
+    stop bucket
     rm -rf /opt/cess/$mode/bucket/*
     if [ $? -eq 0 ]; then
         log_success "purge bucket data success"
@@ -236,10 +237,6 @@ case "$1" in
         ;;
     status)
         status $2
-        ;;
-    logs)
-        shift
-        logs $@
         ;;
     purge)
         shift

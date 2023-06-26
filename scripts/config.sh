@@ -348,15 +348,7 @@ function config_set_all() {
         set_kaleido_stash_account
         set_kaleido_ctrl_phrase
     elif [ x"$mode" == x"storage" ]; then
-        local use_domain=0
-        echo "Which way to use to give the outsider access to the machine?"
-        read -p "    [0] use external IP; [1] use domain name (default 0): " use_domain
-        if [ x"$use_domain" == x"0" ] || [ x"$use_domain" == x"" ]; then
-            set_external_ip
-            yq -i eval ".node.domainName=\"\"" $config_file
-        else
-            set_domain_name
-        fi
+        set_external_ip
         assign_chain_ws_url_to_local
         set_bucket_income_account
         set_bucket_sign_phrase

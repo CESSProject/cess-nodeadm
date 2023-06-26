@@ -90,7 +90,7 @@ bucket_ops()
     fi
     local bucket_image="cesslab/cess-bucket:$img_tag"    
     local cmd="docker run --rm --network=host $volumes $bucket_image ./cess-bucket"
-    local -r cfg_arg="-c /opt/bucket/config.toml"
+    local -r cfg_arg="-c /opt/bucket/config.yaml"
     case "$1" in
         increase)
             $cmd $1 $2 $cfg_arg

@@ -87,7 +87,7 @@ function pullimg() {
 
 status()
 {
-    docker ps -a --format 'table {{.Names}}\t{{.Status}}'
+    docker ps -a -f "label=com.docker.compose.project=cess-$mode" --format 'table {{.Names}}\t{{.Status}}'
 }
 
 bucket_ops()

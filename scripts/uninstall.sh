@@ -9,7 +9,7 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 if [ -f "$bin_file" ]; then
-    cess stop
+    cess down
     rm /usr/bin/cess
 fi
 

@@ -67,6 +67,24 @@ reload() {
     return $?
 }
 
+function down() {
+    if [ ! -f "$compose_yaml" ]; then
+        log_err "No configuration file, please set config"
+        exit 1
+    fi
+    log_info "remove all service"
+    docker compose -f $compose_yaml down -v
+}
+
+function pullimg() {
+    if [ ! -f "$compose_yaml" ]; then
+        log_err "No configuration file, please set config"
+        exit 1
+    fi
+    docker pull cesslab/config-gen:$default_image_tag
+    docker compose -f $compose_yaml pull
+}
+
 status()
 {
     docker ps -a --format 'table {{.Names}}\t{{.Status}}'
@@ -204,8 +222,10 @@ Usage:
     stop {chain|kld-sgx|kld-agent|bucket}     stop all or one cess service
     reload {chain|kld-sgx|kld-agent|bucket}   reload (stop remove then start) all or one service
     restart {chain|kld-sgx|kld-agent|bucket}  restart all or one cess service
+    down                                      stop and remove all service
 
     status                              check service status
+    pullimg                             update all service images
     purge {chain|kaleido|bucket}        remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
     
     config {...}                        configuration operations, use 'cess config help' for more details
@@ -235,8 +255,14 @@ case "$1" in
         shift
         reload $@
         ;;
+    down)
+        down
+        ;;
     status)
         status $2
+        ;;
+    pullimg)
+        pullimg
         ;;
     purge)
         shift

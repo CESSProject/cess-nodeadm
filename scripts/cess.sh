@@ -5,12 +5,6 @@ source /opt/cess/nodeadm/scripts/version.sh
 source /opt/cess/nodeadm/scripts/config.sh
 source /opt/cess/nodeadm/scripts/tools.sh
 
-mode=$(yq eval ".node.mode" $config_file)
-if [ $? -ne 0 ]; then
-    log_err "the config file: $config_file may be invalid, please reconfig again"
-    exit 1
-fi
-
 ########################################base################################################
 
 start()

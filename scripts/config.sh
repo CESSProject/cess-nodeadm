@@ -10,8 +10,8 @@ cess config usage:
     set                     set and generate new configurations, then try pull corresponding images
     generate                generate new configurations
     pull-image              download corresponding images after set config
-    chain-port {port}       set chain port and generate new configuration, default is 30888
-    conn-chain {ws}         set conneted chain ws and generate new configuration, default is ws://127.0.0.1:19944
+    chain-port {port}       set chain port and generate new configuration, default is 30336
+    conn-chain {ws}         set conneted chain ws and generate new configuration, default is ws://host.docker.internal:9944
 EOF
 }
 
@@ -111,7 +111,7 @@ set_domain_name() {
     done
 }
 
-default_chain_ws_url="ws://127.0.0.1:9944"
+default_chain_ws_url="ws://host.docker.internal:9944"
 
 set_chain_ws_url() {
     local -r default=$default_chain_ws_url

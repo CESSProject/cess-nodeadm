@@ -2,6 +2,25 @@
 
 source /opt/cess/nodeadm/scripts/utils.sh
 
+mode=$(yq eval ".node.mode" $config_file)
+if [ $? -ne 0 ]; then
+    log_err "the config file: $config_file may be invalid, please reconfig again"
+    exit 1
+fi
+
+readonly local_chain_ws_url="ws://127.0.0.1:9944"
+readonly host_docker_chain_ws_url="ws://host.docker.internal:9944"
+default_chain_ws_url=$local_chain_ws_url
+
+function reset_default_chain_url_by_mode() {
+    if [ x"$mode" == x"authority" ]; then
+        default_chain_ws_url=$host_docker_chain_ws_url
+    else
+        default_chain_ws_url=$local_chain_ws_url
+    fi
+}
+reset_default_chain_url_by_mode
+
 config_help() {
     cat <<EOF
 cess config usage:
@@ -11,7 +30,7 @@ cess config usage:
     generate                generate new configurations
     pull-image              download corresponding images after set config
     chain-port {port}       set chain port and generate new configuration, default is 30336
-    conn-chain {ws}         set conneted chain ws and generate new configuration, default is ws://host.docker.internal:9944
+    conn-chain {ws}         set conneted chain ws and generate new configuration, default is $default_chain_ws_url
 EOF
 }
 
@@ -38,6 +57,27 @@ set_chain_name() {
     fi
 }
 
+function is_sgx_satisfied() {    
+    get_distro_name
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    if [ x"$DISTRO" != x"Ubuntu" ]; then
+        log_err "Current only support Ubuntu and the kernel version must be greater than 5.11 on authority mode"
+        return 1
+    fi
+    local kernal_version=$(uname -r | cut -d . -f 1,2)
+    if is_ver_a_ge_b 5.11 $kernal_version; then
+        log_err "The kernel version must be greater than 5.11, your version is $kernal_version. Please upgrade the kernel first."
+        return 1
+    fi
+    # install and run sgx_enable program
+    if install_sgx_enable_if_absent; then
+        sgx_enable
+    fi
+    return $?    
+}
+
 set_node_mode() {
     local -r default="authority"
     local to_set=""
@@ -50,6 +90,11 @@ set_node_mode() {
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
+            if [ x"$to_set" == x"authority" ]; then
+                if ! is_sgx_satisfied; then
+                    continue
+                fi
+            fi
             if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"watcher" ]; then
                 if [ x"$to_set" != x"$mode" ]; then
                     mode=$to_set
@@ -111,12 +156,13 @@ set_domain_name() {
     done
 }
 
-default_chain_ws_url="ws://host.docker.internal:9944"
-
 set_chain_ws_url() {
     local -r default=$default_chain_ws_url
     local to_set=""
     local current="$(yq eval ".node.chainWsUrl" $config_file)"
+    if [ x"$current" == x"$local_chain_ws_url" ] || [ x"$current" == x"$host_docker_chain_ws_url" ]; then
+        current=""
+    fi
     if [ x"$current" != x"" ]; then
         read -p "Enter cess chain ws url (current: $current, press enter to skip): " to_set
     else
@@ -131,7 +177,7 @@ set_chain_ws_url() {
 }
 
 function assign_chain_ws_url_to_local() {
-    yq -i eval ".node.chainWsUrl=\"$default_chain_ws_url\"" $config_file
+    yq -i eval ".node.chainWsUrl=\"$local_chain_ws_url\"" $config_file
 }
 
 set_kaleido_stash_account() {
@@ -436,30 +482,10 @@ config_generate() {
     fi
 
     if [ x"$mode" == x"authority" ]; then
-        get_distro_name
-        if [ $? -ne 0 ]; then
-            exit 1
-        fi
-        if [ x"$DISTRO" != x"Ubuntu" ]; then
-            log_err "Current only support Ubuntu and the kernel version must be greater than 5.11 on authority mode"
-            exit 1
-        fi
-        local kernal_version=$(uname -r | cut -d . -f 1,2)
-        if is_ver_a_ge_b 5.11 $kernal_version; then
-            log_err "The kernel version must be greater than 5.11, your version is $kernal_version. Please upgrade the kernel first."
-            exit 1
-        fi
-        # install and run sgx_enable program
-        if install_sgx_enable_if_absent; then
-            sgx_enable
-            if [ $? -ne 0 ]; then
-                exit 1
-            fi
-        fi
         # set boot peer ids
         # TODO: to distingish the profile
         local boot_peer_ids=$(dig +short txt _dnsaddr.bootstrap-kldr.cess.cloud | awk -F "/" '{sub(/"/, "", $7); print $7}' | paste -sd ,)
-        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file
+        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file    
     fi
 
     log_info "Start generate configurations and docker compose file"        

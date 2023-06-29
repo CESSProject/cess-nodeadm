@@ -21,17 +21,16 @@ help()
 cat << EOF
 Usage:
     help                  show help information
-    --update              update cess-nodeadm script and config
+    --skip-dep            skip install the dependencies for cess-nodeadm
     --retain-config       retain old config when update cess-nodeadm, only valid on update option
-    --region {cn|en}      use region to accelerate docker pull
-    --docker_mirror       optional, Aliyun or AzureChinaCloud
+    --docker-mirror       optional, Aliyun or AzureChinaCloud
 EOF
 exit 0
 }
 
-install_depenencies()
+install_dependencies()
 {
-    if [ x"$update" == x"true" ]; then
+    if [ x"$skip_dep" == x"true" ]; then
         return 0
     fi
 
@@ -127,61 +126,74 @@ install_depenencies()
 }
 
 install_cess_node()
-{
-    log_info "--------------Install cess nodeadm-------------"
-    local bin_file=/usr/bin/cess
-     
-    if [ -d "$install_dir" ] && [ -f "$bin_file" ] && [ x"$update" == x"true" ]; then
-        echo "Update cess nodeadm"
-        rm $bin_file
-        rm -rf $install_dir/scripts
-        cp -r $local_base_dir/scripts $install_dir/
-        if [ x"$retain_config" != x"true" ]; then
-            rm -f $install_dir/config.yaml
-            cp $local_base_dir/config.yaml $install_dir/
+{    
+    local dst_bin=/usr/bin/cess
+    local dst_config=$install_dir/config.yaml
+    local dst_utils_sh=$install_dir/scripts/utils.sh
+    local src_utils_sh=$local_base_dir/scripts/utils.sh
+    local old_version=""
+    local new_version=""
+    if [ -f "$dst_utils_sh" ]; then
+        old_version=$(cat $dst_utils_sh | grep nodeadm_version | awk -F = '{gsub(/"/,"");print $2}')
+    fi
+    if [ -f "$src_utils_sh" ]; then
+        new_version=$(cat $src_utils_sh | grep nodeadm_version | awk -F = '{gsub(/"/,"");print $2}')
+    fi
+    
+    echo "Begin install cess nodeadm $new_version"
+    
+    if [ -f "$dst_config" ] && [ x"$retain_config" != x"true" ]; then
+        log_info "WARNING: It is detected that you may have previously installed cess nodeadm $old_version"
+        log_info "         and that a new installation will overwrite the original configuration."
+        log_info "         Request to make sure you have backed up the relevant important configuration data."
+        printf "Press \033[0;33mY\033[0m to continue: "
+        local y=""
+        read y
+        if [ x"$y" != x"Y" ]; then
+            echo "install operate cancel"
+            return 1
         fi
-    else
-        if [ -f "$install_dir/scripts/uninstall.sh" ]; then
-            echo "Uninstall old cess nodeadm"
-            $install_dir/scripts/uninstall.sh
-        fi
-
-        echo "Install new cess nodeadm"
-        mkdir -p $install_dir
-        cp $local_base_dir/config.yaml $install_dir/
-        chown root:root $install_dir/config.yaml
-        chmod 0600 $install_dir/config.yaml
-        cp -r $local_base_dir/scripts $install_dir/
-        cp -r $local_base_dir/sgx-software-enable $install_dir/
-
-        yq -i eval ".node.region=\"$region\"" $config_file
     fi
 
-    echo "Install cess command line tool"
+    local old_config=$install_dir/.old_config.yaml
+    if [ x"$retain_config" == x"true" ]; then
+        cp $dst_config $old_config
+    fi
+
+    if [ -f "$install_dir/scripts/uninstall.sh" ]; then
+        echo "Uninstall old cess nodeadm $old_version"
+        $install_dir/scripts/uninstall.sh
+    fi
+
+    mkdir -p $install_dir
+
+    if [ -f $old_config ]; then
+        mv $old_config $dst_config
+    else
+        cp $local_base_dir/config.yaml $dst_config
+    fi
+    chown root:root $install_dir/config.yaml
+    chmod 0600 $install_dir/config.yaml
+
+    cp -r $local_base_dir/scripts $install_dir/
+    cp -r $local_base_dir/sgx-software-enable $install_dir/
+     
     cp $local_script_dir/cess.sh /usr/bin/cess
 
-    log_success "------------Install success-------------"
+    log_success "Install cess nodeadm success"
 }
 
-region="en"
-update="false"
+skip_dep="false"
 retain_config="false"
 
 while true ; do
     case "$1" in
-        --region)
-            if [ x"$2" == x"" ] || [[ x"$2" != x"cn" && x"$2" != x"en" ]]; then
-                help
-            fi
-            region=$2
-            shift 2
-            ;;
-        --docker_mirror)
+        --docker-mirror)
             docker_mirror=$2
             shift 2
             ;;
-        --update)
-            update="true"
+        --skip-dep)
+            skip_dep="true"
             shift 1
             ;;
         --retain-config)
@@ -198,5 +210,5 @@ while true ; do
     esac
 done
 
-install_depenencies
+install_dependencies
 install_cess_node

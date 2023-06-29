@@ -74,6 +74,8 @@ function is_sgx_satisfied() {
     # install and run sgx_enable program
     if install_sgx_enable_if_absent; then
         sgx_enable
+    else
+        exit 1
     fi
     return $?    
 }
@@ -443,6 +445,7 @@ config_chain_port() {
 }
 
 function install_sgx_enable_if_absent() {
+    log_info "Begin install sgx_enable ..."
     local sgx_enable_bin=/usr/local/bin/sgx_enable
     if [ -x $sgx_enable_bin ]; then
         return 0
@@ -460,6 +463,7 @@ function install_sgx_enable_if_absent() {
         mv $sgx_enable_src/sgx_enable $sgx_enable_bin
         chmod +x $sgx_enable_bin
         make -s -C $sgx_enable_src clean
+        log_success "sgx_enable install successful"
         return 0
     fi
     log_err "Install sgx_enable failed"

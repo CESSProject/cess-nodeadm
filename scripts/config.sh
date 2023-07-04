@@ -402,6 +402,7 @@ function config_set_all() {
     elif [ x"$mode" == x"watcher" ]; then
         set_chain_name
         set_external_ip
+        assign_chain_ws_url_to_local
         set_chain_pruning_mode
     else
         log_err "Invalid mode value: $mode"

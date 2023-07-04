@@ -27,7 +27,7 @@ inner_docker_version()
 function show_version() {
     local prog_name=$1
     local image_name=$2
-    local image_tag=$default_image_tag
+    local image_tag=$profile
     local version_cmd=$3
     local extra_docker_opts=$4
     local image_hash=(`docker images | grep '^\b'$image_name'\b ' | grep $image_tag`)

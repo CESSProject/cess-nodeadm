@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nodeadm_version="v0.2.0"
+nodeadm_version="v0.3.0"
 aliyun_address="region.cn-hangzhou.aliyuncs.com"
 
 base_dir=/opt/cess/nodeadm
@@ -8,8 +8,7 @@ script_dir=$base_dir/scripts
 config_file=$base_dir/config.yaml
 build_dir=$base_dir/build
 compose_yaml=$build_dir/docker-compose.yaml
-default_image_tag="latest"
-profile="prod"
+profile="testnet"
 
 function echo_c()
 {
@@ -129,7 +128,11 @@ get_distro_name()
 function set_profile()
 {
     local to_set=$1
-    if [ x"$to_set" == x"dev" ] || [ x"$to_set" == x"test" ] || [ x"$to_set" == x"prod" ]; then
+    if [ -z $to_set ]; then
+        log_info "current profile: $profile"
+        return 0
+    fi
+    if [ x"$to_set" == x"devnet" ] || [ x"$to_set" == x"testnet" ] || [ x"$to_set" == x"mainnet" ]; then
         yq -i eval ".node.profile=\"$to_set\"" $config_file
         log_success "the profile set to $to_set"
         return 0
@@ -141,11 +144,8 @@ function set_profile()
 function load_profile()
 {
     local p="`yq eval ".node.profile" $config_file`"
-    if [ x"$p" == x"dev" ] || [ x"$p" == x"test" ] || [ x"$p" == x"prod" ]; then
-        profile=$p
-        if [ x"$p" == x"dev" ]; then
-            default_image_tag="dev"
-        fi
+    if [ x"$p" == x"devnet" ] || [ x"$p" == x"testnet" ] || [ x"$p" == x"mainnet" ]; then
+        profile=$p        
         return 0
     fi
     log_err "the profile: $p of config file is invalid, use default value: $profile"

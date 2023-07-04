@@ -349,10 +349,7 @@ function try_pull_image() {
         org_name=$aliyun_address/$org_name
     fi
     if [ -z $img_tag ]; then
-        img_tag="latest"
-        if [ x"$profile" != x"prod" ]; then
-            img_tag="$profile"
-        fi
+        img_tag="$profile"
     fi
     local img_id="$org_name/$img_name:$img_tag"
     log_info "download image: $img_id"
@@ -471,7 +468,7 @@ function install_sgx_enable_if_absent() {
 }
 
 config_generate() {
-    local cg_image="cesslab/config-gen:$default_image_tag"
+    local cg_image="cesslab/config-gen:$profile"
     while getopts ":p" opt; do
         case ${opt} in
         p)
@@ -487,9 +484,14 @@ config_generate() {
 
     if [ x"$mode" == x"authority" ]; then
         # set boot peer ids
-        # TODO: to distingish the profile
-        local boot_peer_ids=$(dig +short txt _dnsaddr.bootstrap-kldr.cess.cloud | awk -F "/" '{sub(/"/, "", $7); print $7}' | paste -sd ,)
-        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file    
+        local boot_domain="boot-kldr-$profile.cess.cloud"
+        local boot_peer_ids=$(dig +short txt _dnsaddr.$boot_domain | awk -F "/" '{sub(/"/, "", $7); print $7}' | paste -sd ,)
+        if [ $? -ne 0 ]; then
+            log_err "the boot dnsaddr resolve failed"
+            exit 1
+        fi
+        yq -i eval ".kaleido.bootDnsaddr=\"/dnsaddr/$boot_domain\"" $config_file
+        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file
     fi
 
     log_info "Start generate configurations and docker compose file"        

@@ -5,7 +5,7 @@ node:
   externalIp: ""
   domainName: ""
   chainWsUrl: ""
-  profile: prod
+  profile: testnet 
 
 ## chain configurations
 chain:

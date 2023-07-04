@@ -77,9 +77,6 @@ tools()
         space-info)
             space_info
             ;;
-        profile)
-            set_profile $2
-            ;;
         cmd_args)
             shift
             set_extra_cmd_args $@

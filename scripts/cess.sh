@@ -75,7 +75,7 @@ function pullimg() {
         log_err "No configuration file, please set config"
         exit 1
     fi
-    docker pull cesslab/config-gen:$default_image_tag
+    docker pull cesslab/config-gen:$profile
     docker compose -f $compose_yaml pull
 }
 
@@ -96,11 +96,7 @@ bucket_ops()
         volumes="-v "$volumes
     fi
 
-    local img_tag="latest"
-    if [ x"$profile" != x"prod" ]; then
-        img_tag="$profile"
-    fi
-    local bucket_image="cesslab/cess-bucket:$img_tag"    
+    local bucket_image="cesslab/cess-bucket:$profile"    
     local cmd="docker run --rm --network=host $volumes $bucket_image ./cess-bucket"
     local -r cfg_arg="-c /opt/bucket/config.yaml"
     case "$1" in
@@ -223,6 +219,7 @@ Usage:
     purge {chain|kaleido|bucket}        remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
     
     config {...}                        configuration operations, use 'cess config help' for more details
+    profile {devnet|testnet|mainnet}    switch CESS network profile, testnet for default
     bucket {...}                        use 'cess bucket help' for more details
     tools {...}                         use 'cess tools help' for more details
 EOF
@@ -269,6 +266,9 @@ case "$1" in
     config)
         shift
         config $@
+        ;;
+    profile)
+        set_profile $2
         ;;
     tools)
         shift

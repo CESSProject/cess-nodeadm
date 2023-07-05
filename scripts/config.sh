@@ -57,7 +57,7 @@ set_chain_name() {
     fi
 }
 
-function is_sgx_satisfied() {    
+function is_sgx_satisfied() {
     get_distro_name
     if [ $? -ne 0 ]; then
         exit 1
@@ -77,7 +77,7 @@ function is_sgx_satisfied() {
     else
         exit 1
     fi
-    return $?    
+    return $?
 }
 
 set_node_mode() {
@@ -381,20 +381,42 @@ function pull_images_by_mode() {
     return 0
 }
 
+function assign_boot_addrs() {
+    local boot_domain="boot-kldr-$profile.cess.cloud"
+    local boot_addr="_dnsaddr.$boot_domain"
+    if [ x"$mode" == x"authority" ]; then
+        local boot_peer_ids=$(dig +short txt $boot_addr | awk -F "/" '{sub(/"/, "", $7); print $7}' | paste -sd ,)
+        if [ $? -ne 0 ]; then
+            log_err "the boot dnsaddr: $boot_addr resolve failed"
+            exit 1
+        fi
+        yq -i eval ".kaleido.bootDnsaddr=\"/dnsaddr/$boot_domain\"" $config_file
+        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file
+        return 0
+    fi
+    if [ x"$mode" == x"storage" ]; then
+        yq -i eval ".bucket.bootAddr=\"$boot_addr\"" $config_file
+        return 0
+    fi
+    return 1
+}
+
 function config_set_all() {
     ensure_root
 
     set_node_mode
 
     if [ x"$mode" == x"authority" ]; then
+        assign_boot_addrs
         set_chain_name
         set_external_ip
         set_chain_ws_url
         set_kaleido_stash_account
         set_kaleido_ctrl_phrase
     elif [ x"$mode" == x"storage" ]; then
-        set_external_ip
+        assign_boot_addrs
         assign_chain_ws_url_to_local
+        set_external_ip
         set_bucket_income_account
         set_bucket_sign_phrase
         set_bucket_disk_path
@@ -483,19 +505,7 @@ config_generate() {
         exit 1
     fi
 
-    if [ x"$mode" == x"authority" ]; then
-        # set boot peer ids
-        local boot_domain="boot-kldr-$profile.cess.cloud"
-        local boot_peer_ids=$(dig +short txt _dnsaddr.$boot_domain | awk -F "/" '{sub(/"/, "", $7); print $7}' | paste -sd ,)
-        if [ $? -ne 0 ]; then
-            log_err "the boot dnsaddr resolve failed"
-            exit 1
-        fi
-        yq -i eval ".kaleido.bootDnsaddr=\"/dnsaddr/$boot_domain\"" $config_file
-        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file
-    fi
-
-    log_info "Start generate configurations and docker compose file"        
+    log_info "Start generate configurations and docker compose file"
 
     rm -rf $build_dir
     mkdir -p $build_dir/.tmp

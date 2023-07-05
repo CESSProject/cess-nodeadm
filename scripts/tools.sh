@@ -38,7 +38,7 @@ rotate_keys()
         return 0
     fi
 
-    local res=`curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:9933 2>/dev/null`
+    local res=`docker exec chain curl -H 'Content-Type: application/json' -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:9933 2>/dev/null`
     session_key=`echo $res | jq .result`
     if [ x"$session_key" = x"" ]; then
         log_err "Generate session key failed"

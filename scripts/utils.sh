@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nodeadm_version="v0.3.1"
+nodeadm_version="v0.3.2"
 aliyun_address="region.cn-hangzhou.aliyuncs.com"
 
 base_dir=/opt/cess/nodeadm

@@ -307,6 +307,27 @@ set_bucket_disk_spase() {
     done
 }
 
+set_bucket_port() {
+    local to_set=""
+    local current="$(yq eval ".bucket.port" $config_file)"
+    while true; do
+        if [ x"$current" != x"" ]; then
+            read -p "Enter cess bucket listener port (current: $current, press enter to skip): " to_set
+        else
+            read -p "Enter cess bucket listener port: " to_set
+        fi
+        to_set=$(echo "$to_set")
+        if [ x"$to_set" != x"" ]; then
+            if check_port $to_set; then
+                yq -i eval ".bucket.port=$to_set" $config_file
+                break
+            fi
+        elif [ x"$current" != x"" ]; then
+            break
+        fi
+    done
+}
+
 function set_chain_pruning_mode() {
     local -r default="8000"
     local to_set=""
@@ -417,6 +438,7 @@ function config_set_all() {
         assign_boot_addrs
         assign_chain_ws_url_to_local
         set_external_ip
+        set_bucket_port
         set_bucket_income_account
         set_bucket_sign_phrase
         set_bucket_disk_path

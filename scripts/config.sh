@@ -388,7 +388,6 @@ function pull_images_by_mode() {
         try_pull_image cess-chain
         try_pull_image kaleido
         try_pull_image kaleido-rotator
-        try_pull_image kaleido-kafka dev
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-bucket

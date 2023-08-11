@@ -52,7 +52,7 @@ set_extra_cmd_args()
     local name=$1
     shift
     local cmd_args=$@
-    if [ x"$name" == x"chain" ] || [ x"$name" == x"scheduler" ] || [ x"$name" == x"bucket" ]; then
+    if [ x"$name" == x"chain" ] || [ x"$name" == x"bucket" ]; then
         if [ x"$cmd_args" == x"" ]; then
             log_err "cmd_args must not be empty"
             return 1
@@ -63,7 +63,7 @@ set_extra_cmd_args()
             return 0
         fi
     else
-        log_err "invalid container name: $name, options: {chain|scheduler|bucket}"
+        log_err "invalid container name: $name, options: {chain|bucket}"
     fi
     return 1
 }

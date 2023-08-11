@@ -225,9 +225,9 @@ set_bucket_income_account() {
     local current="$(yq eval ".bucket.incomeAccount" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess bucket income account (current: $current, press enter to skip): " to_set
+            read -p "Enter cess storage earnings account (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess bucket income account: " to_set
+            read -p "Enter cess storage earnings account: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -244,9 +244,9 @@ set_bucket_sign_phrase() {
     local current="$(yq eval ".bucket.signPhrase" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess bucket signature phrase (current: $current, press enter to skip): " to_set
+            read -p "Enter cess storage staking signature phrase (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess bucket signature phrase: " to_set
+            read -p "Enter cess storage staking signature phrase: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -264,9 +264,9 @@ set_bucket_disk_path() {
     local current="$(yq eval ".bucket.diskPath" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess bucket disk path (current: $current, press enter to skip): " to_set
+            read -p "Enter cess storage disk path (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess bucket disk path (default: $default): " to_set
+            read -p "Enter cess storage disk path (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -293,9 +293,9 @@ set_bucket_disk_spase() {
     local current="$(yq eval ".bucket.space" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess bucket space, by GB unit (current: $current, press enter to skip): " to_set
+            read -p "Enter cess storage space, by GB unit (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess bucket space, by GB unit: " to_set
+            read -p "Enter cess storage space, by GB unit: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -312,9 +312,9 @@ set_bucket_port() {
     local current="$(yq eval ".bucket.port" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess bucket listener port (current: $current, press enter to skip): " to_set
+            read -p "Enter cess storage listener port (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess bucket listener port: " to_set
+            read -p "Enter cess storage listener port: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then

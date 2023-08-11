@@ -9,8 +9,8 @@ if [ $(id -u) -ne 0 ]; then
     exit 1
 fi
 
-if [ -f "$compose_yaml" ]; then    
-    cess down
+if [ -f "$compose_yaml" ]; then
+    docker compose -f $compose_yaml down -v --rmi
 fi
 
 if [ -f "$bin_file" ]; then    

@@ -72,7 +72,8 @@ install_dependencies()
         wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
     fi
 
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 ]; then        
+        rm -f /usr/bin/yq
         log_err "Install yq failed"
         exit 1
     fi

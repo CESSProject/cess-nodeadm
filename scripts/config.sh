@@ -436,7 +436,6 @@ function config_set_all() {
     elif [ x"$mode" == x"storage" ]; then
         assign_boot_addrs
         assign_chain_ws_url_to_local
-        set_external_ip
         set_bucket_port
         set_bucket_income_account
         set_bucket_sign_phrase
@@ -444,7 +443,6 @@ function config_set_all() {
         set_bucket_disk_spase
     elif [ x"$mode" == x"watcher" ]; then
         set_chain_name
-        set_external_ip
         assign_chain_ws_url_to_local
         set_chain_pruning_mode
     else

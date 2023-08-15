@@ -20,7 +20,7 @@ inner_docker_version()
         show_version "Kaleido" "cesslab/kaleido-rotator" "--version"
         show_version "Kaleido" "cesslab/kaleido" "--version" "--entrypoint ./target/release/kaleido"
     elif [ x"$mode" == x"storage" ]; then
-        show_version "Bucket" "cesslab/cess-bucket" "./cess-bucket version"
+        show_version "Bucket" "cesslab/cess-bucket" "version"
     fi
 }
 

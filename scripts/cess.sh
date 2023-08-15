@@ -95,7 +95,7 @@ bucket_ops()
     fi
 
     local bucket_image="cesslab/cess-bucket:$profile"    
-    local cmd="docker run --rm --network=host $volumes $bucket_image ./cess-bucket"
+    local cmd="docker run --rm --network=host $volumes $bucket_image"
     local -r cfg_arg="-c /opt/bucket/config.yaml"
     case "$1" in
         increase)

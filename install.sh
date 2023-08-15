@@ -62,18 +62,22 @@ install_dependencies()
     fi
 
     need_install_yq=1
-    if command_exists yq; then
-        ya_ver=$(yq -V | awk '{print $NF}' | cut -d . -f 1,2)
-        if is_ver_a_ge_b $ya_ver 4.25; then
-            need_install_yq=0
+    while [ $need_install_yq -eq 1 ]; do
+        if command_exists yq; then
+            ya_ver=$(yq -V | awk '{print $NF}' | cut -d . -f 1,2)
+            if is_ver_a_ge_b $ya_ver 4.25; then
+                need_install_yq=0
+            fi
         fi
-    fi
-    if [ $need_install_yq -eq 1 ]; then
-        wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
-    fi
+        if [ $need_install_yq -eq 1 ]; then
+            echo "Begin download yq ..."
+            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -q --show-progress -O /tmp/yq \
+              && mv /tmp/yq /usr/bin/yq \
+              && chmod +x /usr/bin/yq
+        fi
+    done
 
-    if [ $? -ne 0 ]; then        
-        rm -f /usr/bin/yq
+    if ! command_exists yq; then
         log_err "Install yq failed"
         exit 1
     fi

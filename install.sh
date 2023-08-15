@@ -64,8 +64,8 @@ install_dependencies()
     need_install_yq=1
     while [ $need_install_yq -eq 1 ]; do
         if command_exists yq; then
-            ya_ver=$(yq -V | awk '{print $NF}' | cut -d . -f 1,2)
-            if is_ver_a_ge_b $ya_ver 4.25; then
+            ya_ver=$(yq -V 2> /dev/null | awk '{print $NF}' | cut -d . -f 1,2)
+            if [ ! -z "$ya_ver" ] && [ is_ver_a_ge_b $ya_ver 4.25 ]; then
                 need_install_yq=0
             fi
         fi

@@ -71,7 +71,7 @@ install_dependencies()
         fi
         if [ $need_install_yq -eq 1 ]; then
             echo "Begin download yq ..."
-            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -q --show-progress -O /tmp/yq \
+            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /tmp/yq \
               && mv /tmp/yq /usr/bin/yq \
               && chmod +x /usr/bin/yq
         fi

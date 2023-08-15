@@ -71,12 +71,10 @@ function down() {
 }
 
 function pullimg() {
-    if [ ! -f "$compose_yaml" ]; then
-        log_err "No configuration file, please set config"
-        exit 1
-    fi
     docker pull cesslab/config-gen:$profile
-    docker compose -f $compose_yaml pull
+    if [ -f "$compose_yaml" ]; then
+        docker compose -f $compose_yaml pull
+    fi
 }
 
 status()

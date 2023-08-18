@@ -361,6 +361,20 @@ function set_chain_pruning_mode() {
     done
 }
 
+function set_allow_log_collection() {
+    local current="$(yq eval ".kaleido.allowLogCollection" $config_file)"
+    if [[ "$current" = true ]]; then
+        return
+    fi
+    local to_set=""
+    read -p "❤️  Help us improve TEE Worker with anonymous crash reports & basic usage data? (y/n) : " to_set
+    if [[ $to_set =~ ^[yY](es)?$ ]]; then
+        yq -i eval ".kaleido.allowLogCollection=true" $config_file
+    else
+        yq -i eval ".kaleido.allowLogCollection=false" $config_file
+    fi
+}
+
 function try_pull_image() {
     local img_name=$1
     local img_tag=$2
@@ -433,6 +447,7 @@ function config_set_all() {
         set_chain_ws_url
         set_kaleido_stash_account
         set_kaleido_ctrl_phrase
+        set_allow_log_collection
     elif [ x"$mode" == x"storage" ]; then
         assign_boot_addrs
         assign_chain_ws_url_to_local

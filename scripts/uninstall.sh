@@ -10,7 +10,7 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 if [ -f "$compose_yaml" ]; then
-    docker compose -f $compose_yaml down -v --rmi
+    docker compose -f $compose_yaml down -v --rmi all
 fi
 
 if [ -f "$bin_file" ]; then    

@@ -438,6 +438,8 @@ function assign_boot_addrs() {
 function config_set_all() {
     ensure_root
 
+    local prev_mode=$mode
+
     set_node_mode
 
     if [ x"$mode" == x"authority" ]; then
@@ -465,6 +467,13 @@ function config_set_all() {
         exit 1
     fi
     log_success "Set configurations successfully"
+
+    if test -f "$compose_yaml"; then
+        if [[ $prev_mode != $mode ]]; then
+            log_info "the mode changed, remove all services for $prev_mode mode"
+            docker compose -f $compose_yaml down
+        fi
+    fi
 
     # Generate configurations
     config_generate $@

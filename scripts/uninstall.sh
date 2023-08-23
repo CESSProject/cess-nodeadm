@@ -10,7 +10,8 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 if [ -f "$compose_yaml" ]; then
-    docker compose -f $compose_yaml down -v --rmi all
+    docker compose -f $compose_yaml rm -sf
+    docker compose -f $compose_yaml down -v --remove-orphans --rmi all
 fi
 
 if [ -f "$bin_file" ]; then    

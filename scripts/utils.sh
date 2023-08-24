@@ -184,3 +184,9 @@ function is_ver_a_ge_b() (
 
 	return 0
 )
+
+join_by() {
+    local d=$1
+    shift
+    printf '%s\n' "$@" | paste -sd "$d"
+}

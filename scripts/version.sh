@@ -8,6 +8,13 @@ version()
     printf "Profile: ${profile}\n"
     printf "nodeadm version: ${nodeadm_version}\n"
     inner_docker_version
+
+    if [[ -f $config_file ]]; then
+        local ss=$(yq eval '.node.noWatchContainers | join(", ")' $config_file)
+        if [[ -n ${ss// /} ]]; then
+            log_info "No auto upgrade service(s): $ss"
+        fi
+    fi
 }
 
 inner_docker_version()

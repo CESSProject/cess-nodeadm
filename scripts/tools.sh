@@ -68,6 +68,16 @@ set_extra_cmd_args()
     return 1
 }
 
+set_no_watch_containers() {
+    local names=($@)
+    local quoted_names=()
+    for ix in  ${!names[*]}; do
+        quoted_names+=(\"${names[$ix]}\")
+    done    
+    local ss=$(join_by , ${quoted_names[@]})
+    yq -i eval ".node.noWatchContainers=[$ss]" $config_file
+}
+
 tools()
 {
     case "$1" in
@@ -80,6 +90,10 @@ tools()
         cmd_args)
             shift
             set_extra_cmd_args $@
+            ;;
+        no_watchs)
+            shift
+            set_no_watch_containers $@
             ;;
         *)
             tools_help

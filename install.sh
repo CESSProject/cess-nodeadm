@@ -164,7 +164,7 @@ install_cess_node()
     fi
 
     local old_config=$local_base_dir/.old_config.yaml
-    if [ x"$retain_config" == x"true" ]; then
+    if [[ -f $dst_config ]] && [[ $retain_config = "true" ]]; then
         cp $dst_config $old_config
     fi
 

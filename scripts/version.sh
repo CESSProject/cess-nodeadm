@@ -20,14 +20,14 @@ version()
 inner_docker_version()
 {
     printf "Docker images:\n"
-    show_version "Config-gen" "cesslab/config-gen" "version"
+    show_version "config-gen" "cesslab/config-gen" "version"
 
-    show_version "Chain" "cesslab/cess-chain" "./cess-node --version"
+    show_version "chain" "cesslab/cess-chain" "./cess-node --version"
     if [ x"$mode" == x"authority" ]; then
-        show_version "Kaleido" "cesslab/kaleido-rotator" "--version"
-        show_version "Kaleido" "cesslab/kaleido" "--version" "--entrypoint ./target/release/kaleido"
+        show_version "kld-agent" "cesslab/kaleido-rotator" "--version"
+        show_version "kld-sgx" "cesslab/kaleido" "--version" "--entrypoint ./target/release/kaleido"
     elif [ x"$mode" == x"storage" ]; then
-        show_version "Bucket" "cesslab/cess-bucket" "version"
+        show_version "bucket" "cesslab/cess-bucket" "version"
     fi
 }
 

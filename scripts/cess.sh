@@ -14,7 +14,23 @@ start()
         exit 1
     fi
 
-    docker compose -f $compose_yaml up -d $1
+    if [[ $mode = "authority" ]]; then
+        local stored_kld_sgx_image_id="$(yq eval ".node.kldSgxImageId //\"\"" $config_file 2>/dev/null)"
+        local current_kld_sgx_image_id=$(docker inspect -f '{{.Image}}' kld-sgx 2>/dev/null)
+        if [[ $stored_kld_sgx_image_id != $current_kld_sgx_image_id ]] && [[ -n $stored_kld_sgx_image_id ]]; then
+            rm -f /opt/cess/authority/kaleido/key/encrypted/podr2_key
+        fi
+
+        docker compose -f $compose_yaml up -d $1
+
+        local current_kld_sgx_image_id=$(docker inspect -f '{{.Image}}' kld-sgx 2>/dev/null)
+        if [[ $stored_kld_sgx_image_id != $current_kld_sgx_image_id ]]; then
+            yq -i eval ".node.kldSgxImageId=\"$current_kld_sgx_image_id\"" $config_file            
+        fi
+    else
+        docker compose -f $compose_yaml up -d $1
+    fi
+    
     return $?
 }
 

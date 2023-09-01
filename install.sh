@@ -24,6 +24,7 @@ Usage:
     --skip-dep            skip install the dependencies for cess-nodeadm
     --retain-config       retain old config when update cess-nodeadm, only valid on update option
     --docker-mirror       optional, Aliyun or AzureChinaCloud
+    --no-rmi              do not remove the corresponding image when uninstalling the service
 EOF
 exit 0
 }
@@ -170,7 +171,11 @@ install_cess_node()
 
     if [ -f "$install_dir/scripts/uninstall.sh" ]; then
         echo "Uninstall old cess nodeadm $old_version"
-        $install_dir/scripts/uninstall.sh
+        local opt=
+        if [[ $no_rmi -eq 1 ]]; then
+            opt="--no-rmi"
+        fi
+        $install_dir/scripts/uninstall.sh $opt
     fi
 
     mkdir -p $install_dir
@@ -193,6 +198,7 @@ install_cess_node()
 
 skip_dep="false"
 retain_config="false"
+no_rmi=0
 
 while true ; do
     case "$1" in
@@ -206,6 +212,10 @@ while true ; do
             ;;
         --retain-config)
             retain_config="true"
+            shift 1
+            ;;
+        --no-rmi)
+            no_rmi=1
             shift 1
             ;;
         "")

@@ -269,22 +269,29 @@ set_bucket_disk_path() {
             read -p "Enter cess storage disk path (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
+        local to_update_path=
         if [ x"$to_set" != x"" ]; then
-            if [ ! -e $to_set ] || [ -f $to_set ]; then
-                log_err "the path: $to_set not exists or not a directory"
-                continue
-            fi
-            yq -i eval ".bucket.diskPath=\"$to_set\"" $config_file
-            break
+            to_update_path=$to_set            
         elif [ x"$current" == x"" ]; then
-            if [ ! -e $default ] || [ -f $default ]; then
-                log_err "the path: $default not exists or not a directory"
-                continue
-            fi
-            yq -i eval ".bucket.diskPath=\"$default\"" $config_file
-            break
+            to_update_path=$default           
         fi
-        break
+        if [[ -z $to_update_path ]]; then
+            break
+        elif [[ ! -e $to_update_path ]]; then
+            local need_create=
+            read -p "The directory: $to_update_path does not exist, do you need to create it for you? (y/n) " need_create
+            if [[ $need_create =~ ^[yY](es)?$ ]]; then
+                mkdir -p $to_update_path
+                if [[ $? -eq 0 ]]; then
+                    yq -i eval ".bucket.diskPath=\"$to_update_path\"" $config_file
+                    break
+                fi
+            fi
+            continue
+        elif [[ ! -d $to_update_path ]]; then
+            log_err "The path: $to_update_path is not a directory"
+            continue
+        fi
     done
 }
 

@@ -182,6 +182,30 @@ function assign_chain_ws_url_to_local() {
     yq -i eval ".node.chainWsUrl=\"$local_chain_ws_url\"" $config_file
 }
 
+function assign_backup_chain_ws_urls_by_profile() {
+    local chain_urls=
+    if [[ $profile = "testnet" ]]; then
+        chain_urls=(
+            "wss://testnet-rpc0.cess.cloud/ws/"
+            "wss://testnet-rpc1.cess.cloud/ws/"
+        )
+    elif [[ $profile = "devnet" ]]; then
+        chain_urls=(
+            "wss://devnet-rpc.cess.cloud/ws-1/"
+            "wss://devnet-rpc.cess.cloud/ws/"
+            "wss://devnet-rpc.cess.cloud/ws-3/"
+        )
+    fi
+    if [[ -n $chain_urls ]]; then
+        local quoted=()
+        for ix in  ${!chain_urls[*]}; do
+            quoted+=(\"${chain_urls[$ix]}\")
+        done    
+        local ss=$(join_by , ${quoted[@]})
+        yq -i eval ".node.backupChainWsUrls=[$ss]" $config_file        
+    fi
+}
+
 set_kaleido_stash_account() {
     local stash_acc=""
     local current="$(yq eval ".kaleido.stashAccount" $config_file)"
@@ -450,16 +474,13 @@ function config_set_all() {
     set_node_mode
 
     if [ x"$mode" == x"authority" ]; then
-        assign_boot_addrs
         set_chain_name
         set_external_ip
         set_chain_ws_url
         set_kaleido_stash_account
         set_kaleido_ctrl_phrase
         set_allow_log_collection
-    elif [ x"$mode" == x"storage" ]; then
-        assign_boot_addrs
-        assign_chain_ws_url_to_local
+    elif [ x"$mode" == x"storage" ]; then        
         set_bucket_port
         set_bucket_income_account
         set_bucket_sign_phrase
@@ -467,7 +488,6 @@ function config_set_all() {
         set_bucket_disk_spase
     elif [ x"$mode" == x"watcher" ]; then
         set_chain_name
-        assign_chain_ws_url_to_local
         set_chain_pruning_mode
     else
         log_err "Invalid mode value: $mode"
@@ -553,6 +573,16 @@ config_generate() {
     if [ ! -f "$config_file" ]; then
         log_err "config.yaml doesn't exists!"
         exit 1
+    fi
+
+    if [[ $mode = "authority" ]]; then
+        assign_boot_addrs    
+    elif [[ $mode = "storage" ]]; then
+        assign_boot_addrs
+        assign_chain_ws_url_to_local
+        assign_backup_chain_ws_urls_by_profile
+    elif [[ $mode = "watcher" ]]; then
+        assign_chain_ws_url_to_local
     fi
 
     log_info "Start generate configurations and docker compose file"

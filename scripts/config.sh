@@ -35,7 +35,16 @@ EOF
 }
 
 config_show() {
-    cat $config_file
+    local keys=
+    if [[ $mode = "authority" ]]; then
+        keys=('"node"' '"chain"' '"kaleido"')
+    elif [[ $mode = "storage" ]]; then
+        keys=('"node"' '"chain"' '"bucket"')
+    elif [[ $mode = "watcher" ]]; then
+        keys=('"node"' '"chain"')
+    fi
+    local ss=$(join_by , ${keys[@]})
+    yq eval ". |= pick([$ss])" $config_file -o json
 }
 
 set_chain_name() {

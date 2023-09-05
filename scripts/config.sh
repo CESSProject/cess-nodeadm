@@ -324,6 +324,9 @@ set_bucket_disk_path() {
         elif [[ ! -d $to_update_path ]]; then
             log_err "The path: $to_update_path is not a directory"
             continue
+        else
+            yq -i eval ".bucket.diskPath=\"$to_update_path\"" $config_file
+            break
         fi
     done
 }

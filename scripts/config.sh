@@ -371,6 +371,28 @@ set_bucket_port() {
     done
 }
 
+function set_bucket_use_cpu_cores() {
+    local cpu_s=$(awk -F':' '/physical id/ {print $NF+1}' /proc/cpuinfo | tail -n 1)
+    local cpu_sockets=$(awk -F':' '/^siblings/ {print $NF+0;exit}' /proc/cpuinfo)
+    local my_cpu_core_number=$((${cpu_s}*${cpu_sockets}))
+    local to_set=""
+    local current="$(yq eval ".bucket.useCpuCores //0" $config_file)"
+    while true; do
+        echo "Enter the number of CPU cores used for mining; Your CPU cores are ${my_cpu_core_number}"
+        read -p "  (current: $current, 0 means all cores are used; press enter to skip): " to_set
+        if [[ -z "$to_set" ]]; then
+            break
+        fi        
+        expr ${to_set} + 0 > /dev/null 2>&1
+        if [[ $? -eq 0 && $to_set -ge 0 && $to_set -le ${my_cpu_core_number} || "$to_set" = "0" ]]; then
+            yq -i eval ".bucket.useCpuCores=$to_set" $config_file
+            break
+        else
+            log_err "Please enter an integer between 0 and ${my_cpu_core_number}. Your input is incorrect. Please re-enter!"
+        fi
+    done
+}
+
 function set_chain_pruning_mode() {
     local -r default="8000"
     local to_set=""
@@ -492,12 +514,13 @@ function config_set_all() {
         set_kaleido_stash_account
         set_kaleido_ctrl_phrase
         set_allow_log_collection
-    elif [ x"$mode" == x"storage" ]; then        
+    elif [ x"$mode" == x"storage" ]; then
         set_bucket_port
         set_bucket_income_account
         set_bucket_sign_phrase
         set_bucket_disk_path
         set_bucket_disk_spase
+        set_bucket_use_cpu_cores
     elif [ x"$mode" == x"watcher" ]; then
         set_chain_name
         set_chain_pruning_mode

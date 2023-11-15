@@ -190,3 +190,14 @@ join_by() {
     shift
     printf '%s\n' "$@" | paste -sd "$d"
 }
+
+function your_cpu_core_number() {
+    local cpu_s=$(awk -F':' '/physical id/ {print $NF+1}' /proc/cpuinfo | tail -n 1)
+    local cpu_sockets=$(awk -F':' '/^siblings/ {print $NF+0;exit}' /proc/cpuinfo)
+    echo $(($cpu_s*$cpu_sockets))
+}
+
+is_uint() { case $1        in '' | *[!0-9]*              ) return 1;; esac ;}
+is_int()  { case ${1#[-+]} in '' | *[!0-9]*              ) return 1;; esac ;}
+is_unum() { case $1        in '' | . | *[!0-9.]* | *.*.* ) return 1;; esac ;}
+is_num()  { case ${1#[-+]} in '' | . | *[!0-9.]* | *.*.* ) return 1;; esac ;}

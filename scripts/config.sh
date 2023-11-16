@@ -255,14 +255,14 @@ set_kaleido_ctrl_phrase() {
 
 function set_kaleido_port() {
     local to_set=""
-    local current="$(yq eval ".kaleido.listenerPort //10010" $config_file)"
+    local current="$(yq eval ".kaleido.apiPort //10010" $config_file)"
     read -p "Enter listener port for kaleido (current: $current, press enter to skip): " to_set
     if [[ -z $to_set ]]; then
         return 0
     fi
     while true; do
         if is_uint $to_set && (($to_set <= 65535)); then
-            yq -i eval ".kaleido.listenerPort=$to_set" $config_file
+            yq -i eval ".kaleido.apiPort=$to_set" $config_file
             break
         fi
         read -p "  Please input a valid port number (press enter to skip): " to_set
@@ -273,7 +273,7 @@ function set_kaleido_port() {
 }
 
 function set_kaleido_endpoint() {
-    local kldPort="$(yq eval ".kaleido.listenerPort //10010" $config_file)"
+    local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
     local current="$(yq eval ".kaleido.kldrEndpoint //\"\"" $config_file)"
     if [[ -z $current ]]; then
         echo "Start to config endpoint for access kaleido from internet"

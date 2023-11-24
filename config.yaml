@@ -2,10 +2,8 @@
 node:
   ## the mode of node: authority/storage/watcher
   mode: "authority"
-  externalIp: ""
-  domainName: ""
   chainWsUrl: ""
-  profile: devnet 
+  profile: testnet 
 
 ## chain configurations
 chain:
@@ -24,8 +22,5 @@ bucket:
 
 ## kaleido configurations
 kaleido:
-  agentPort: 10010
-  kaleidoPort: 4001
-  bootPeerIds: ""
   stashAccount: ""
   controllerPhrase: ""

@@ -253,6 +253,63 @@ set_kaleido_ctrl_phrase() {
     done
 }
 
+function set_kaleido_port() {
+    local to_set=""
+    local current="$(yq eval ".kaleido.apiPort //10010" $config_file)"
+    read -p "Enter listener port for kaleido (current: $current, press enter to skip): " to_set
+    if [[ -z $to_set ]]; then
+        return 0
+    fi
+    while true; do
+        if is_uint $to_set && (($to_set <= 65535)); then
+            yq -i eval ".kaleido.apiPort=$to_set" $config_file
+            break
+        fi
+        read -p "  Please input a valid port number (press enter to skip): " to_set
+        if [[ -z $to_set ]]; then
+            break
+        fi
+    done
+}
+
+function set_kaleido_endpoint() {
+    local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
+    local current="$(yq eval ".kaleido.kldrEndpoint //\"\"" $config_file)"
+    if [[ -z $current ]]; then
+        echo "Start to config endpoint for access kaleido from internet"
+        echo "  Try to fetch your external IP ..."
+        local extIp=$(http_proxy= curl -fsSL ifconfig.net)
+        local suggestEndpoint="http://$extIp:$kldPort"
+        local useSe=
+        read -p "The suggested endpoint is $suggestEndpoint. Do you want to use it? (press enter to use, other key to fill in)" useSe
+        if [[ -z $useSe ]]; then
+            yq -i eval ".kaleido.kldrEndpoint=\"$suggestEndpoint\"" $config_file
+        else
+            local uri=
+            read -p "Enter a valid URI or use the suggested endpoint if the input is empty : " uri
+            if [[ -z $uri ]]; then
+                uri=$suggestEndpoint
+            fi
+            yq -i eval ".kaleido.kldrEndpoint=\"$uri\"" $config_file
+        fi
+    else
+        local change=
+        read -p "The kaleido endpoint is $current. Do you want to change? (press enter to skip, other key to fill in)" change
+        if [[ ! -z $change ]]; then
+            local uri=
+            read -p "Enter a valid URI or no change if the input is empty. : " uri
+            if [[ ! -z $uri ]]; then
+                yq -i eval ".kaleido.kldrEndpoint=\"$uri\"" $config_file
+            fi
+        fi
+    fi
+}
+
+function assign_kaleido_podr2_max_threads() {
+    local n=$(your_cpu_core_number)
+    yq -i eval ".kaleido.podr2MaxThreads=\"$n\"" $config_file
+}
+
 set_bucket_income_account() {
     local to_set=""
     local current="$(yq eval ".bucket.incomeAccount" $config_file)"
@@ -372,23 +429,21 @@ set_bucket_port() {
 }
 
 function set_bucket_use_cpu_cores() {
-    local cpu_s=$(awk -F':' '/physical id/ {print $NF+1}' /proc/cpuinfo | tail -n 1)
-    local cpu_sockets=$(awk -F':' '/^siblings/ {print $NF+0;exit}' /proc/cpuinfo)
-    local my_cpu_core_number=$((${cpu_s}*${cpu_sockets}))
+    local cpu_core_number=$(your_cpu_core_number)
     local to_set=""
     local current="$(yq eval ".bucket.useCpuCores //0" $config_file)"
     while true; do
-        echo "Enter the number of CPU cores used for mining; Your CPU cores are ${my_cpu_core_number}"
+        echo "Enter the number of CPU cores used for mining; Your CPU cores are ${cpu_core_number}"
         read -p "  (current: $current, 0 means all cores are used; press enter to skip): " to_set
         if [[ -z "$to_set" ]]; then
             break
         fi        
         expr ${to_set} + 0 > /dev/null 2>&1
-        if [[ $? -eq 0 && $to_set -ge 0 && $to_set -le ${my_cpu_core_number} || "$to_set" = "0" ]]; then
+        if [[ $? -eq 0 && $to_set -ge 0 && $to_set -le ${cpu_core_number} || "$to_set" = "0" ]]; then
             yq -i eval ".bucket.useCpuCores=$to_set" $config_file
             break
         else
-            log_err "Please enter an integer between 0 and ${my_cpu_core_number}. Your input is incorrect. Please re-enter!"
+            log_err "Please enter an integer between 0 and ${cpu_core_number}. Your input is incorrect. Please re-enter!"
         fi
     done
 }
@@ -480,19 +535,9 @@ function pull_images_by_mode() {
     return 0
 }
 
-function assign_boot_addrs() {
-    local boot_domain="boot-kldr-$profile.cess.cloud"
+function assign_bucket_boot_addrs() {
+    local boot_domain="boot-bucket-$profile.cess.cloud"
     local boot_addr="_dnsaddr.$boot_domain"
-    if [ x"$mode" == x"authority" ]; then
-        local boot_peer_ids=$(dig +short txt $boot_addr | awk -F "/" '{sub(/"/, "", $7); print $7}' | paste -sd ,)
-        if [ $? -ne 0 ]; then
-            log_err "the boot dnsaddr: $boot_addr resolve failed"
-            exit 1
-        fi
-        yq -i eval ".kaleido.bootDnsaddr=\"/dnsaddr/$boot_domain\"" $config_file
-        yq -i eval ".kaleido.bootPeerIds=\"$boot_peer_ids\"" $config_file
-        return 0
-    fi
     if [ x"$mode" == x"storage" ]; then
         yq -i eval ".bucket.bootAddr=\"$boot_addr\"" $config_file
         return 0
@@ -509,11 +554,13 @@ function config_set_all() {
 
     if [ x"$mode" == x"authority" ]; then
         set_chain_name
-        set_external_ip
         set_chain_ws_url
+        set_kaleido_port
+        set_kaleido_endpoint
         set_kaleido_stash_account
         set_kaleido_ctrl_phrase
         set_allow_log_collection
+        assign_kaleido_podr2_max_threads
     elif [ x"$mode" == x"storage" ]; then
         set_bucket_port
         set_bucket_income_account
@@ -610,10 +657,8 @@ config_generate() {
         exit 1
     fi
 
-    if [[ $mode = "authority" ]]; then
-        assign_boot_addrs    
-    elif [[ $mode = "storage" ]]; then
-        assign_boot_addrs
+    if [[ $mode = "storage" ]]; then
+        assign_bucket_boot_addrs
         assign_chain_ws_url_to_local
         assign_backup_chain_ws_urls_by_profile
     elif [[ $mode = "watcher" ]]; then

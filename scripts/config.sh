@@ -273,36 +273,28 @@ function set_kaleido_port() {
 }
 
 function set_kaleido_endpoint() {
-    local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
     local current="$(yq eval ".kaleido.kldrEndpoint //\"\"" $config_file)"
+    local empty_current=0
+    local input_uri=
     if [[ -z $current ]]; then
-        echo "Start to config endpoint for access kaleido from internet"
-        echo "  Try to fetch your external IP ..."
+        empty_current=1
+        echo "Start configuring the endpoint to access kaleido from the Internet"
+        echo "  Try to get your external IP ..."
         local extIp=$(http_proxy= curl -fsSL ifconfig.net)
-        local suggestEndpoint="http://$extIp:$kldPort"
-        local useSe=
-        read -p "The suggested endpoint is $suggestEndpoint. Do you want to use it? (press enter to use, other key to fill in)" useSe
-        if [[ -z $useSe ]]; then
-            yq -i eval ".kaleido.kldrEndpoint=\"$suggestEndpoint\"" $config_file
-        else
-            local uri=
-            read -p "Enter a valid URI or use the suggested endpoint if the input is empty : " uri
-            if [[ -z $uri ]]; then
-                uri=$suggestEndpoint
-            fi
-            yq -i eval ".kaleido.kldrEndpoint=\"$uri\"" $config_file
-        fi
-    else
-        local change=
-        read -p "The kaleido endpoint is $current. Do you want to change? (press enter to skip, other key to fill in)" change
-        if [[ ! -z $change ]]; then
-            local uri=
-            read -p "Enter a valid URI or no change if the input is empty. : " uri
-            if [[ ! -z $uri ]]; then
-                yq -i eval ".kaleido.kldrEndpoint=\"$uri\"" $config_file
-            fi
-        fi
+        local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
+        current="http://$extIp:$kldPort"        
     fi
+    read -p "Enter the kaleido endpoint (current: $current, press enter to skip): " input_uri
+    while true; do
+        if [[ -z $input_uri && $empty_current = 1 ]]; then
+            input_uri=$current
+        fi
+        if [[ ! -z $input_uri ]]; then
+            #TODO: to validate the uri
+            yq -i eval ".kaleido.kldrEndpoint=\"$input_uri\"" $config_file
+        fi
+        break
+    done
 }
 
 function assign_kaleido_podr2_max_threads() {

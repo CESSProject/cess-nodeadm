@@ -9,7 +9,7 @@ if [ $? -ne 0 ]; then
 fi
 
 readonly local_chain_ws_url="ws://127.0.0.1:9944"
-readonly host_docker_chain_ws_url="ws://172.18.0.9:9944"
+readonly host_docker_chain_ws_url="ws://cess-chain:9944"
 default_chain_ws_url=$local_chain_ws_url
 
 function reset_default_chain_url_by_mode() {
@@ -170,7 +170,7 @@ set_domain_name() {
 set_chain_ws_url() {
     local -r default=$default_chain_ws_url
     local to_set=""
-    local current="$(yq eval ".node.chainWsUrl" $config_file)"
+    local current="$(yq eval ".node.chainWsUrl //\"\"" $config_file)"
     if [ x"$current" == x"$local_chain_ws_url" ] || [ x"$current" == x"$host_docker_chain_ws_url" ]; then
         current=""
     fi

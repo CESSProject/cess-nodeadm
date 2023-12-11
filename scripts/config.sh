@@ -234,6 +234,25 @@ set_kaleido_stash_account() {
     done
 }
 
+set_tee_type() {
+    local tee_type=""
+    local current="$(yq eval ".kaleido.teeType" $config_file)"
+    while true; do
+        if [ x"$current" != x"" ]; then
+            read -p "Enter what kind of tee worker would you want to be [Full/Certifier/Verifier/Marker] (current: $current, press enter to skip): " tee_type
+        else
+            read -p "Enter to confirm what tee worker you want to be [Full/Certifier/Verifier/Marker]: " tee_type
+        fi
+        tee_type=$(echo "$tee_type")
+        if [ x"$tee_type" != x"" ]; then
+            yq -i eval ".kaleido.teeType=\"$tee_type\"" $config_file
+            break
+        elif [ x"$current" != x"" ]; then
+            break
+        fi
+    done
+}
+
 set_kaleido_ctrl_phrase() {
     local to_set=""
     local current="$(yq eval ".kaleido.controllerPhrase" $config_file)"
@@ -550,6 +569,7 @@ function config_set_all() {
         set_kaleido_port
         set_kaleido_endpoint
         set_kaleido_stash_account
+        set_tee_type
         set_kaleido_ctrl_phrase
         set_allow_log_collection
         assign_kaleido_podr2_max_threads

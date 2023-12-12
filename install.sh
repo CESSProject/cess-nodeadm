@@ -192,6 +192,7 @@ install_cess_node()
     cp -r $local_base_dir/sgx-software-enable $install_dir/
      
     cp $local_script_dir/cess.sh /usr/bin/cess
+    cp $local_base_dir/tee.conf $install_dir/
 
     log_success "Install cess nodeadm success"
 }

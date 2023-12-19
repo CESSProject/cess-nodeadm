@@ -234,11 +234,13 @@ set_tee_type() {
     local tee_type=""
     while true; do
         if [ x"$1" == x"" ];then
-            read -p "Enter what kind of tee worker would you want to be [Certifier/Marker]: " tee_type
-            if [ x"$tee_type" != x"Certifier" ] && [ x"$tee_type" != x"Marker" ];then
-                echo "Please enter 'Certifier' or 'Marker'!"
-                continue
-            fi
+            # read -p "Enter what kind of tee worker would you want to be [Certifier/Marker]: " tee_type
+            # if [ x"$tee_type" != x"Certifier" ] && [ x"$tee_type" != x"Marker" ];then
+            #     echo "Please enter 'Certifier' or 'Marker'!"
+            #     continue
+            # fi
+            echo -e "\033[33mYour Tee worker will work as 'Marker'!\033[0m"
+            tee_type="Marker"
         else
             read -p "Enter what kind of tee worker would you want to be [Full/Verifier]: " tee_type
             if [ x"$tee_type" != x"Full" ] && [ x"$tee_type" != x"Verifier" ];then

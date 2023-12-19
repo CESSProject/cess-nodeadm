@@ -3,7 +3,7 @@ node:
   ## the mode of node: authority/storage/watcher
   mode: "authority"
   chainWsUrl: ""
-  profile: testnet 
+  profile: testnet
 
 ## chain configurations
 chain:

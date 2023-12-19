@@ -477,6 +477,35 @@ function set_bucket_use_cpu_cores() {
     done
 }
 
+function set_bucket_staking_account() {
+    local to_set=
+    local current="$(yq eval ".bucket.stakerAccount //\"\"" $config_file)"
+    if [[ "$current" != "" ]]; then
+        read -p "Enter the staker's payment account if you have one (current: $current, press enter to skip): " to_set
+    else
+        read -p "Enter the staker's payment account if you have one (press enter to skip): " to_set
+    fi
+    to_set=$(echo "$to_set")
+    if [[ "$to_set" != "" ]]; then
+        yq -i eval ".bucket.stakerAccount=\"$to_set\"" $config_file
+    fi
+}
+
+function set_bucket_reserved_tws() {
+    local to_set=
+    local current="$(yq eval ".bucket.reservedTws //[] | join(\",\")" $config_file)"
+    if [[ "$current" != "" ]]; then
+        read -p "Enter the reserved TEE woker endpoints (current: $current, separate multiple values with commas, press enter to skip): " to_set
+    else
+        read -p "Enter the reserved TEE woker endpoints (separate multiple values with commas, press enter to skip): " to_set
+    fi
+    to_set=$(echo "$to_set")
+    if [[ "$to_set" != "" ]]; then
+        to_set=\"$(echo $to_set | sed 's/,/","/g')\"
+        yq -i eval ".bucket.reservedTws=[$to_set]" $config_file
+    fi
+}
+
 function set_chain_pruning_mode() {
     local -r default="8000"
     local to_set=""
@@ -597,6 +626,8 @@ function config_set_all() {
         set_bucket_disk_path
         set_bucket_disk_spase
         set_bucket_use_cpu_cores
+        set_bucket_staking_account
+        set_bucket_reserved_tws
     elif [ x"$mode" == x"watcher" ]; then
         set_chain_name
         set_chain_pruning_mode

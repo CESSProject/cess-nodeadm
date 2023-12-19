@@ -207,28 +207,50 @@ function assign_backup_chain_ws_urls_by_profile() {
     fi
     if [[ -n $chain_urls ]]; then
         local quoted=()
-        for ix in  ${!chain_urls[*]}; do
+        for ix in ${!chain_urls[*]}; do
             quoted+=(\"${chain_urls[$ix]}\")
-        done    
+        done
         local ss=$(join_by , ${quoted[@]})
-        yq -i eval ".node.backupChainWsUrls=[$ss]" $config_file        
+        yq -i eval ".node.backupChainWsUrls=[$ss]" $config_file
     fi
 }
 
 set_kaleido_stash_account() {
     local stash_acc=""
     local current="$(yq eval ".kaleido.stashAccount" $config_file)"
+    if [ x"$current" != x"" ]; then
+        read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
+    else
+        read -p "Enter cess validator stash account: " stash_acc
+    fi
+    stash_acc=$(echo "$stash_acc")
+    if [ x"$stash_acc" != x"" ]; then
+        yq -i eval ".kaleido.stashAccount=\"$stash_acc\"" $config_file
+    fi
+    echo "$stash_acc"
+}
+
+set_tee_type() {
+    local tee_type=""
     while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
+        if [ x"$1" == x"" ];then
+            # read -p "Enter what kind of tee worker would you want to be [Certifier/Marker]: " tee_type
+            # if [ x"$tee_type" != x"Certifier" ] && [ x"$tee_type" != x"Marker" ];then
+            #     echo "Please enter 'Certifier' or 'Marker'!"
+            #     continue
+            # fi
+            echo -e "\033[33mYour Tee worker will work as 'Marker'!\033[0m"
+            tee_type="Marker"
         else
-            read -p "Enter cess validator stash account: " stash_acc
+            read -p "Enter what kind of tee worker would you want to be [Full/Verifier]: " tee_type
+            if [ x"$tee_type" != x"Full" ] && [ x"$tee_type" != x"Verifier" ];then
+                echo "Please enter 'Full' or 'Verifier'!"
+                continue
+            fi
         fi
-        stash_acc=$(echo "$stash_acc")
-        if [ x"$stash_acc" != x"" ]; then
-            yq -i eval ".kaleido.stashAccount=\"$stash_acc\"" $config_file
-            break
-        elif [ x"$current" != x"" ]; then
+        tee_type=$(echo "$tee_type")
+        if [ x"$tee_type" != x"" ]; then
+            yq -i eval ".kaleido.teeType=\"$tee_type\"" $config_file
             break
         fi
     done
@@ -276,22 +298,37 @@ function set_kaleido_endpoint() {
     local current="$(yq eval ".kaleido.kldrEndpoint //\"\"" $config_file)"
     local empty_current=0
     local input_uri=
+    local extIp=$(http_proxy= curl -fsSL ifconfig.net)
     if [[ -z $current ]]; then
         empty_current=1
         echo "Start configuring the endpoint to access kaleido from the Internet"
         echo "  Try to get your external IP ..."
-        local extIp=$(http_proxy= curl -fsSL ifconfig.net)
         local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
-        current="http://$extIp:$kldPort"        
+        current="http://$extIp:$kldPort"
     fi
     read -p "Enter the kaleido endpoint (current: $current, press enter to skip): " input_uri
     while true; do
-        if [[ -z $input_uri && $empty_current = 1 ]]; then
-            input_uri=$current
+        if [[ $input_uri =~ $extIp ]]; then
+            break
         fi
-        if [[ ! -z $input_uri ]]; then
-            #TODO: to validate the uri
-            yq -i eval ".kaleido.kldrEndpoint=\"$input_uri\"" $config_file
+        if [[ ! -z $input_uri || ! $current =~ $extIp ]]; then
+            if [[ -z $input_uri ]]; then
+                input_uri=$current
+            fi
+            if [[ $input_uri =~ ^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$ || $input_uri =~ ^(http|https)://[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)$ ]]; then
+                local set_reverse_proxy=""
+                yq -i eval ".kaleido.kldrEndpoint=\"$input_uri\"" $config_file
+                read -p "Do you need to configure a domain name proxy with one click? (y/n): " set_reverse_proxy
+                if [[ $set_reverse_proxy =~ ^[yY](es)?$ ]]; then
+                    yq -i eval ".nginx.confPath=\"/opt/cess/authority/proxy/conf\"" $config_file
+                    yq -i eval ".nginx.logPath=\"/opt/cess/authority/proxy/log\"" $config_file
+                    cleaned_head=$(echo "$input_uri" | sed 's|^http://||; s|^https://||' | sed 's|/$||')
+                    sed -i "s/\(server_name\s*\).*;/\1$cleaned_head;/" /opt/cess/nodeadm/tee.conf
+                fi
+            else
+                echo "Error: Invalid URI provided."
+                exit 1
+            fi
         fi
         break
     done
@@ -353,9 +390,9 @@ set_bucket_disk_path() {
         to_set=$(echo "$to_set")
         local to_update_path=
         if [ x"$to_set" != x"" ]; then
-            to_update_path=$to_set            
+            to_update_path=$to_set
         elif [ x"$current" == x"" ]; then
-            to_update_path=$default           
+            to_update_path=$default
         fi
         if [[ -z $to_update_path ]]; then
             break
@@ -429,8 +466,8 @@ function set_bucket_use_cpu_cores() {
         read -p "  (current: $current, 0 means all cores are used; press enter to skip): " to_set
         if [[ -z "$to_set" ]]; then
             break
-        fi        
-        expr ${to_set} + 0 > /dev/null 2>&1
+        fi
+        expr ${to_set} + 0 >/dev/null 2>&1
         if [[ $? -eq 0 && $to_set -ge 0 && $to_set -le ${cpu_core_number} || "$to_set" = "0" ]]; then
             yq -i eval ".bucket.useCpuCores=$to_set" $config_file
             break
@@ -578,7 +615,7 @@ function config_set_all() {
         set_chain_ws_url
         set_kaleido_port
         set_kaleido_endpoint
-        set_kaleido_stash_account
+        set_tee_type "$(set_kaleido_stash_account)"
         set_kaleido_ctrl_phrase
         set_allow_log_collection
         assign_kaleido_podr2_max_threads
@@ -714,6 +751,9 @@ config_generate() {
             mkdir -p $base_mode_path/chain/
         fi
         cp $build_dir/chain/* $base_mode_path/chain/
+        rm -rf $base_mode_path/proxy
+        mkdir -p $base_mode_path/proxy/log $base_mode_path/proxy/conf
+        cp /opt/cess/nodeadm/tee.conf $base_mode_path/proxy/conf/
     elif [ x"$mode" == x"storage" ]; then
         if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/

@@ -22,5 +22,4 @@ bucket:
 
 ## kaleido configurations
 kaleido:
-  stashAccount: ""
   controllerPhrase: ""

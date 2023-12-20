@@ -220,11 +220,10 @@ set_kaleido_stash_account() {
     local current="$(yq eval ".kaleido.stashAccount" $config_file)"
     if [ x"$current" != x"" ]; then
         read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
+        stash_acc=$current
     else
         read -p "Enter cess validator stash account: " stash_acc
-    fi
-    stash_acc=$(echo "$stash_acc")
-    if [ x"$stash_acc" != x"" ]; then
+        stash_acc=$(echo "$stash_acc")
         yq -i eval ".kaleido.stashAccount=\"$stash_acc\"" $config_file
     fi
     echo "$stash_acc"

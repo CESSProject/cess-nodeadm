@@ -218,13 +218,14 @@ function assign_backup_chain_ws_urls_by_profile() {
 set_kaleido_stash_account() {
     local stash_acc=""
     local current="$(yq eval ".kaleido.stashAccount" $config_file)"
-    if [ x"$current" != x"" ]; then
-        read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
-        stash_acc=$current
-    else
-        read -p "Enter cess validator stash account: " stash_acc
-        stash_acc=$(echo "$stash_acc")
+    read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
+    if [ x"$stash_acc" == x"" ]; then
+        stash_acc=$(echo "$current")
+    fi
+    if [ x"$stash_acc" != x"null" ]; then
         yq -i eval ".kaleido.stashAccount=\"$stash_acc\"" $config_file
+    else
+        stash_acc=""
     fi
     echo "$stash_acc"
 }
@@ -295,42 +296,35 @@ function set_kaleido_port() {
 
 function set_kaleido_endpoint() {
     local current="$(yq eval ".kaleido.kldrEndpoint //\"\"" $config_file)"
-    local empty_current=0
     local input_uri=
     local extIp=$(http_proxy= curl -fsSL ifconfig.net)
     if [[ -z $current ]]; then
-        empty_current=1
         echo "Start configuring the endpoint to access kaleido from the Internet"
         echo "  Try to get your external IP ..."
         local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
         current="http://$extIp:$kldPort"
     fi
     read -p "Enter the kaleido endpoint (current: $current, press enter to skip): " input_uri
-    while true; do
-        if [[ $input_uri =~ $extIp ]]; then
-            break
+    if [[ -z $input_uri ]]; then
+        input_uri=$(echo "$current")
+    fi
+    yq -i eval ".kaleido.kldrEndpoint=\"$input_uri\"" $config_file
+    if [[ $input_uri =~ ^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$ ]]; then
+        local set_reverse_proxy=""
+        read -p "Do you need to configure a domain name proxy with one click? (y/n): " set_reverse_proxy
+        if [[ $set_reverse_proxy =~ ^[yY](es)?$ ]]; then
+            yq -i eval ".nginx.confPath=\"/opt/cess/authority/proxy/conf\"" $config_file
+            yq -i eval ".nginx.logPath=\"/opt/cess/authority/proxy/log\"" $config_file
+            cleaned_head=$(echo "$input_uri" | sed 's|^http://||; s|^https://||' | sed 's|/$||')
+            sed -i "s/\(server_name\s*\).*;/\1$cleaned_head;/" /opt/cess/nodeadm/tee.conf
         fi
-        if [[ ! -z $input_uri || ! $current =~ $extIp ]]; then
-            if [[ -z $input_uri ]]; then
-                input_uri=$current
-            fi
-            if [[ $input_uri =~ ^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$ || $input_uri =~ ^(http|https)://[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)$ ]]; then
-                local set_reverse_proxy=""
-                yq -i eval ".kaleido.kldrEndpoint=\"$input_uri\"" $config_file
-                read -p "Do you need to configure a domain name proxy with one click? (y/n): " set_reverse_proxy
-                if [[ $set_reverse_proxy =~ ^[yY](es)?$ ]]; then
-                    yq -i eval ".nginx.confPath=\"/opt/cess/authority/proxy/conf\"" $config_file
-                    yq -i eval ".nginx.logPath=\"/opt/cess/authority/proxy/log\"" $config_file
-                    cleaned_head=$(echo "$input_uri" | sed 's|^http://||; s|^https://||' | sed 's|/$||')
-                    sed -i "s/\(server_name\s*\).*;/\1$cleaned_head;/" /opt/cess/nodeadm/tee.conf
-                fi
-            else
-                echo "Error: Invalid URI provided."
-                exit 1
-            fi
-        fi
-        break
-    done
+    elif [[ $input_uri =~ ^(http|https)://[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)$ ]]; then
+        ##do nothing
+        :
+    else
+        echo "Error: Invalid URI provided."
+        exit 1
+    fi
 }
 
 function assign_kaleido_podr2_max_threads() {

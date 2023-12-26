@@ -95,9 +95,9 @@ set_node_mode() {
     local current=$mode
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess node mode from 'authority/storage/watcher' (current: $current, press enter to skip): " to_set
+            read -p "Select node mode from 'authority | storage | watcher' (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess node mode from 'authority/storage/watcher' (default: $default): " to_set
+            read -p "Select node mode from 'authority | storage | watcher' (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -337,9 +337,9 @@ set_bucket_income_account() {
     local current="$(yq eval ".bucket.incomeAccount" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess storage earnings account (current: $current, press enter to skip): " to_set
+            read -p "Input the earnings account (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess storage earnings account: " to_set
+            read -p "Input the earnings account: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -356,9 +356,9 @@ set_bucket_sign_phrase() {
     local current="$(yq eval ".bucket.signPhrase" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess storage staking signature phrase (current: $current, press enter to skip): " to_set
+            read -p "Input the signature account mnemonic (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess storage staking signature phrase: " to_set
+            read -p "Input the signature account mnemonic: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -376,9 +376,9 @@ set_bucket_disk_path() {
     local current="$(yq eval ".bucket.diskPath" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess storage disk path (current: $current, press enter to skip): " to_set
+            read -p "Input the workspace path (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess storage disk path (default: $default): " to_set
+            read -p "Input the workspace path (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
         local to_update_path=
@@ -415,9 +415,9 @@ set_bucket_disk_spase() {
     local current="$(yq eval ".bucket.space" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess storage space, by GB unit (current: $current, press enter to skip): " to_set
+            read -p "Input maximum usage space in GiB (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess storage space, by GB unit: " to_set
+            read -p "Input maximum usage space in GiB: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -434,9 +434,9 @@ set_bucket_port() {
     local current="$(yq eval ".bucket.port" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess storage listener port (current: $current, press enter to skip): " to_set
+            read -p "Input the listening port (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess storage listener port: " to_set
+            read -p "Input the listening port: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -455,7 +455,7 @@ function set_bucket_use_cpu_cores() {
     local to_set=""
     local current="$(yq eval ".bucket.useCpuCores //0" $config_file)"
     while true; do
-        echo "Enter the number of CPU cores used for mining; Your CPU cores are ${cpu_core_number}"
+        echo "Input the number of CPU cores used for mining; Your total CPU cores are ${cpu_core_number}"
         read -p "  (current: $current, 0 means all cores are used; press enter to skip): " to_set
         if [[ -z "$to_set" ]]; then
             break
@@ -474,9 +474,9 @@ function set_bucket_staking_account() {
     local to_set=
     local current="$(yq eval ".bucket.stakerAccount //\"\"" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the staker's payment account if you have one (current: $current, press enter to skip): " to_set
+        read -p "Input your staking account, if any (current: $current, press enter to skip): " to_set
     else
-        read -p "Enter the staker's payment account if you have one (press enter to skip): " to_set
+        read -p "Input your staking account, if any (press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
@@ -488,9 +488,9 @@ function set_bucket_reserved_tws() {
     local to_set=
     local current="$(yq eval ".bucket.reservedTws //[] | join(\",\")" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the reserved TEE woker endpoints (current: $current, separate multiple values with commas, press enter to skip): " to_set
+        read -p "Input TEE addresses for priority use (current: $current, separate multiple values with commas, press enter to skip): " to_set
     else
-        read -p "Enter the reserved TEE woker endpoints (separate multiple values with commas, press enter to skip): " to_set
+        read -p "Input TEE addresses for priority use (separate multiple values with commas, press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then

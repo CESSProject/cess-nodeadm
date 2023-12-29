@@ -101,15 +101,9 @@ set_node_mode() {
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            if [ x"$to_set" == x"authority" ]; then
-                if ! is_sgx_satisfied; then
-                    continue
-                fi
-            fi
             if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"watcher" ]; then
                 if [ x"$to_set" != x"$mode" ]; then
                     mode=$to_set
-                    yq -i eval ".node.mode=\"$to_set\"" $config_file
                 fi
                 break
             else
@@ -117,12 +111,18 @@ set_node_mode() {
                 continue
             fi
         elif [ x"$current" == x"" ]; then
-            mode=$default
-            yq -i eval ".node.mode=\"$default\"" $config_file
-            break
+            mode=$default            
         fi
         break
     done
+    if [[ "$mode" = "authority" ]]; then
+        if ! is_sgx_satisfied; then
+            exit 2
+        fi
+    fi
+    if [[ "$current" != "$mode" ]]; then
+        yq -i eval ".node.mode=\"$mode\"" $config_file
+    fi
     local path_with_mode="/opt/cess/$mode/"
     if [ ! -d path_with_mode ]; then
         mkdir -p $path_with_mode
@@ -670,11 +670,11 @@ config_chain_port() {
 }
 
 function install_sgx_enable_if_absent() {
-    log_info "Begin install sgx_enable ..."
     local sgx_enable_bin=/usr/local/bin/sgx_enable
     if [ -x $sgx_enable_bin ]; then
         return 0
     fi
+    log_info "Begin install sgx_enable ..."
     if ! command_exists gcc; then
         apt-get install -y gcc
     fi

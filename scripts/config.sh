@@ -474,13 +474,17 @@ function set_bucket_staking_account() {
     local to_set=
     local current="$(yq eval ".bucket.stakerAccount //\"\"" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the staker's payment account if you have one (current: $current, press enter to skip): " to_set
+        read -p "Enter the staker's payment account if you have one (current: $current, press enter to skip or 'n' to reset): " to_set
     else
         read -p "Enter the staker's payment account if you have one (press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
-        yq -i eval ".bucket.stakerAccount=\"$to_set\"" $config_file
+        if [[ $to_set =~ ^[nN](o)?$ ]]; then
+            yq -i eval "del(.bucket.stakerAccount)" $config_file
+        else
+            yq -i eval ".bucket.stakerAccount=\"$to_set\"" $config_file
+        fi
     fi
 }
 
@@ -488,14 +492,18 @@ function set_bucket_reserved_tws() {
     local to_set=
     local current="$(yq eval ".bucket.reservedTws //[] | join(\",\")" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the reserved TEE woker endpoints (current: $current, separate multiple values with commas, press enter to skip): " to_set
+        read -p "Enter the reserved TEE worker endpoints (current: $current, separate multiple values with commas, press enter to skip or 'n' to reset): " to_set
     else
-        read -p "Enter the reserved TEE woker endpoints (separate multiple values with commas, press enter to skip): " to_set
+        read -p "Enter the reserved TEE worker endpoints (separate multiple values with commas, press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
-        to_set=\"$(echo $to_set | sed 's/,/","/g')\"
-        yq -i eval ".bucket.reservedTws=[$to_set]" $config_file
+        if [[ $to_set =~ ^[nN](o)?$ ]]; then
+            yq -i eval "del(.bucket.reservedTws)" $config_file
+        else
+            to_set=\"$(echo $to_set | sed 's/,/","/g')\"
+            yq -i eval ".bucket.reservedTws=[$to_set]" $config_file
+        fi
     fi
 }
 

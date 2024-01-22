@@ -443,18 +443,17 @@ function set_bucket_use_cpu_cores() {
 function set_chain_pruning_mode() {
     local -r default="8000"
     local to_set=""
-    local current="$(yq eval ".chain.pruning" $config_file)"
+    local current="$(yq eval ".chain.pruning //\"\"" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
             read -p "Enter cess chain pruning mode, 'archive' or number (current: $current, press enter to skip): " to_set
         else
             read -p "Enter cess chain pruning mode, 'archive' or number (default: $default): " to_set
         fi
-        to_set=$(echo "$to_set")
-        if [ x"$to_set" != x"" ]; then
-            if [ x"$to_set" != x"archive" ]; then
+        if [[ "$to_set" != "" ]]; then
+            if [[ "$to_set" != "archive" ]]; then
                 if [ -n "$to_set" ] && [ "$to_set" -eq "$to_set" ] 2>/dev/null; then
-                    if [ $(("$to_set")) -lt 256 ]; then
+                    if (( $to_set < 256 )); then
                         log_err "the pruning mode must greater than 255 when as a number"
                         continue
                     fi

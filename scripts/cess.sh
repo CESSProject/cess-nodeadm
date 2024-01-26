@@ -173,6 +173,7 @@ function purge()
     if [ x"$1" = x"" ]; then
         if [ x"$mode" == x"authority" ]; then
             purge_chain
+            purge_ceseal
         elif [ x"$mode" == x"storage" ]; then
             purge_bucket
             purge_chain
@@ -210,6 +211,15 @@ function purge_bucket()
     rm -rf /opt/cess/$mode/bucket/*
     if [ $? -eq 0 ]; then
         log_success "purge bucket data success"
+    fi
+}
+
+function purge_ceseal() {
+    stop cifrost
+    stop ceseal
+    rm -rf /opt/cess/$mode/ceseal/*
+    if [ $? -eq 0 ]; then
+        log_success "purge ceseal data success"
     fi
 }
 

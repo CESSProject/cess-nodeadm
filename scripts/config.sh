@@ -37,7 +37,7 @@ EOF
 config_show() {
     local keys=
     if [[ $mode = "authority" ]]; then
-        keys=('"node"' '"chain"' '"kaleido"')
+        keys=('"node"' '"chain"' '"ceseal"')
     elif [[ $mode = "storage" ]]; then
         keys=('"node"' '"chain"' '"bucket"')
     elif [[ $mode = "watcher" ]]; then
@@ -215,15 +215,15 @@ function assign_backup_chain_ws_urls_by_profile() {
     fi
 }
 
-set_kaleido_stash_account() {
+set_ceseal_stash_account() {
     local stash_acc=""
-    local current="$(yq eval ".kaleido.stashAccount" $config_file)"
+    local current="$(yq eval ".ceseal.stashAccount //\"\"" $config_file)"
     read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
     if [ x"$stash_acc" == x"" ]; then
         stash_acc=$(echo "$current")
     fi
     if [ x"$stash_acc" != x"null" ]; then
-        yq -i eval ".kaleido.stashAccount=\"$stash_acc\"" $config_file
+        yq -i eval ".ceseal.stashAccount=\"$stash_acc\"" $config_file
     else
         stash_acc=""
     fi
@@ -250,24 +250,24 @@ set_tee_type() {
         fi
         tee_type=$(echo "$tee_type")
         if [ x"$tee_type" != x"" ]; then
-            yq -i eval ".kaleido.teeType=\"$tee_type\"" $config_file
+            yq -i eval ".ceseal.role=\"$tee_type\"" $config_file
             break
         fi
     done
 }
 
-set_kaleido_ctrl_phrase() {
+set_ceseal_mnemonic_for_tx() {
     local to_set=""
-    local current="$(yq eval ".kaleido.controllerPhrase" $config_file)"
+    local current="$(yq eval ".ceseal.mnemonic //\"\"" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess validator controller phrase (current: $current, press enter to skip): " to_set
+            read -p "Enter the wallet mnemonic for sending transactions (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess validator controller phrase: " to_set
+            read -p "Enter the wallet mnemonic for sending transactions: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            yq -i eval ".kaleido.controllerPhrase=\"$to_set\"" $config_file
+            yq -i eval ".ceseal.mnemonic=\"$to_set\"" $config_file
             break
         elif [ x"$current" != x"" ]; then
             break
@@ -275,16 +275,16 @@ set_kaleido_ctrl_phrase() {
     done
 }
 
-function set_kaleido_port() {
+function set_ceseal_port() {
     local to_set=""
-    local current="$(yq eval ".kaleido.apiPort //10010" $config_file)"
-    read -p "Enter listener port for kaleido (current: $current, press enter to skip): " to_set
+    local current="$(yq eval ".ceseal.publicPort //19999" $config_file)"
+    read -p "Enter the public port for TEE worker (current: $current, press enter to skip): " to_set
     if [[ -z $to_set ]]; then
         return 0
     fi
     while true; do
         if is_uint $to_set && (($to_set <= 65535)); then
-            yq -i eval ".kaleido.apiPort=$to_set" $config_file
+            yq -i eval ".ceseal.publicPort=$to_set" $config_file
             break
         fi
         read -p "  Please input a valid port number (press enter to skip): " to_set
@@ -294,21 +294,21 @@ function set_kaleido_port() {
     done
 }
 
-function set_kaleido_endpoint() {
-    local current="$(yq eval ".kaleido.kldrEndpoint //\"\"" $config_file)"
+function set_ceseal_endpoint() {
+    local current="$(yq eval ".ceseal.endpointOnChain //\"\"" $config_file)"
     local input_uri=
     local extIp=$(http_proxy= curl -fsSL ifconfig.net)
     if [[ -z $current ]]; then
-        echo "Start configuring the endpoint to access kaleido from the Internet"
+        echo "Start configuring the endpoint to access TEE worker from the Internet"
         echo "  Try to get your external IP ..."
-        local kldPort="$(yq eval ".kaleido.apiPort //10010" $config_file)"
-        current="http://$extIp:$kldPort"
+        local port="$(yq eval ".ceseal.publicPort //19999" $config_file)"
+        current="http://$extIp:$port"
     fi
-    read -p "Enter the kaleido endpoint (current: $current, press enter to skip): " input_uri
+    read -p "Enter the TEE worker endpoint (current: $current, press enter to skip): " input_uri
     if [[ -z $input_uri ]]; then
         input_uri=$(echo "$current")
     fi
-    yq -i eval ".kaleido.kldrEndpoint=\"$input_uri\"" $config_file
+    yq -i eval ".ceseal.endpointOnChain=\"$input_uri\"" $config_file
     if [[ $input_uri =~ ^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$ ]]; then
         local set_reverse_proxy=""
         read -p "Do you need to configure a domain name proxy with one click? (y/n): " set_reverse_proxy
@@ -327,9 +327,9 @@ function set_kaleido_endpoint() {
     fi
 }
 
-function assign_kaleido_podr2_max_threads() {
+function assign_ceseal_podr2_max_threads() {
     local n=$(your_cpu_core_number)
-    yq -i eval ".kaleido.podr2MaxThreads=\"$n\"" $config_file
+    yq -i eval ".ceseal.podr2MaxThreads=\"$n\"" $config_file
 }
 
 set_bucket_income_account() {
@@ -541,16 +541,16 @@ function set_chain_pruning_mode() {
 }
 
 function set_allow_log_collection() {
-    local current="$(yq eval ".kaleido.allowLogCollection" $config_file)"
+    local current="$(yq eval ".ceseal.allowLogCollection" $config_file)"
     if [[ "$current" = true ]]; then
         return
     fi
     local to_set=""
     read -p "❤️  Help us improve TEE Worker with anonymous crash reports & basic usage data? (y/n) : " to_set
     if [[ $to_set =~ ^[yY](es)?$ ]]; then
-        yq -i eval ".kaleido.allowLogCollection=true" $config_file
+        yq -i eval ".ceseal.allowLogCollection=true" $config_file
     else
-        yq -i eval ".kaleido.allowLogCollection=false" $config_file
+        yq -i eval ".ceseal.allowLogCollection=false" $config_file
     fi
 }
 
@@ -579,8 +579,8 @@ function pull_images_by_mode() {
     log_info "try pull images, node mode: $mode"
     if [ x"$mode" == x"authority" ]; then
         try_pull_image cess-chain
-        try_pull_image kaleido
-        try_pull_image kaleido-rotator
+        try_pull_image ceseal
+        try_pull_image cifrost
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-bucket
@@ -614,12 +614,12 @@ function config_set_all() {
     if [ x"$mode" == x"authority" ]; then
         set_chain_name
         set_chain_ws_url
-        set_kaleido_port
-        set_kaleido_endpoint
-        set_tee_type "$(set_kaleido_stash_account)"
-        set_kaleido_ctrl_phrase
-        set_allow_log_collection
-        assign_kaleido_podr2_max_threads
+        set_ceseal_port
+        set_ceseal_endpoint
+        set_tee_type "$(set_ceseal_stash_account)"
+        set_ceseal_mnemonic_for_tx
+        #set_allow_log_collection
+        #assign_ceseal_podr2_max_threads
     elif [ x"$mode" == x"storage" ]; then
         set_bucket_port
         set_bucket_income_account
@@ -649,7 +649,9 @@ function config_set_all() {
     config_generate $@
 
     # Pull images
-    pull_images_by_mode
+    # if [[ ! -v DISABLE_PULL_IMG_AFTER_CFG_SET ]]; then
+    #     pull_images_by_mode
+    # fi
 }
 
 config_conn_chain() {

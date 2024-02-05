@@ -115,7 +115,7 @@ bucket_ops()
     local -r cfg_arg="-c /opt/bucket/config.yaml"
     case "$1" in
         increase)
-            $cmd $1 $2 $cfg_arg
+            $cmd $1 $2 $3 $cfg_arg
             ;;
         exit)
             $cmd $1 $cfg_arg

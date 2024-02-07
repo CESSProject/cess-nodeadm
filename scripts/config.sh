@@ -356,9 +356,9 @@ set_bucket_sign_phrase() {
     local current="$(yq eval ".bucket.signPhrase" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess storage staking signature phrase (current: $current, press enter to skip): " to_set
+            read -p "Enter cess storage signature account phrase (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess storage staking signature phrase: " to_set
+            read -p "Enter cess storage signature account phrase: " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
@@ -474,9 +474,9 @@ function set_bucket_staking_account() {
     local to_set=
     local current="$(yq eval ".bucket.stakerAccount //\"\"" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the staker's payment account if you have one (current: $current, press enter to skip or 'n' to reset): " to_set
+        read -p "Enter the staking account if you have another (current: $current, press enter to skip or 'n' to reset): " to_set
     else
-        read -p "Enter the staker's payment account if you have one (press enter to skip): " to_set
+        read -p "Enter the staking account if you have another (if it is the same as the signature account, press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then

@@ -123,44 +123,6 @@ set_node_mode() {
     fi
 }
 
-set_external_ip() {
-    local ip=""
-    local current="$(yq eval ".node.externalIp" $config_file)"
-    while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter external ip for the machine (current: $current, press enter to skip): " ip
-        else
-            read -p "Enter external ip for the machine: " ip
-        fi
-        ip=$(echo "$ip")
-        if [ x"$ip" != x"" ]; then
-            yq -i eval ".node.externalIp=\"$ip\"" $config_file
-            break
-        elif [ x"$current" != x"" ]; then
-            break
-        fi
-    done
-}
-
-set_domain_name() {
-    local to_set=""
-    local current="$(yq eval ".node.domainName" $config_file)"
-    while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter a domain name for the machine (current: $current, press enter to skip): " to_set
-        else
-            read -p "Enter a domain name for the machine: " to_set
-        fi
-        to_set=$(echo "$to_set")
-        if [ x"$to_set" != x"" ]; then
-            yq -i eval ".node.domainName=\"$to_set\"" $config_file
-            break
-        elif [ x"$current" != x"" ]; then
-            break
-        fi
-    done
-}
-
 function assign_ceseal_chain_to_local() {
     #TODO: will deprecated in next version
     yq -i eval "del(.node.chainWsUrl)" $config_file
@@ -301,11 +263,6 @@ function set_ceseal_endpoint() {
         echo "Error: Invalid URI provided."
         exit 1
     fi
-}
-
-function assign_ceseal_podr2_max_threads() {
-    local n=$(your_cpu_core_number)
-    yq -i eval ".ceseal.podr2MaxThreads=\"$n\"" $config_file
 }
 
 set_bucket_chain_to_use() {
@@ -562,20 +519,6 @@ function set_chain_pruning_mode() {
     done
 }
 
-function set_allow_log_collection() {
-    local current="$(yq eval ".ceseal.allowLogCollection" $config_file)"
-    if [[ "$current" = true ]]; then
-        return
-    fi
-    local to_set=""
-    read -p "❤️  Help us improve TEE Worker with anonymous crash reports & basic usage data? (y/n) : " to_set
-    if [[ $to_set =~ ^[yY](es)?$ ]]; then
-        yq -i eval ".ceseal.allowLogCollection=true" $config_file
-    else
-        yq -i eval ".ceseal.allowLogCollection=false" $config_file
-    fi
-}
-
 function try_pull_image() {
     local img_name=$1
     local img_tag=$2
@@ -640,8 +583,6 @@ function config_set_all() {
         set_tee_type "$(set_ceseal_stash_account)"
         set_ceseal_mnemonic_for_tx
         assign_ceseal_chain_to_local
-        #set_allow_log_collection
-        #assign_ceseal_podr2_max_threads
     elif [ x"$mode" == x"storage" ]; then
         set_bucket_port
         set_bucket_chain_to_use
@@ -670,11 +611,6 @@ function config_set_all() {
 
     # Generate configurations
     config_generate $@
-
-    # Pull images
-    # if [[ ! -v DISABLE_PULL_IMG_AFTER_CFG_SET ]]; then
-    #     pull_images_by_mode
-    # fi
 }
 
 config_chain_port() {

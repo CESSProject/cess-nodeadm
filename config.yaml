@@ -20,6 +20,6 @@ bucket:
   signPhrase: ""
   diskPath: ""
 
-## kaleido configurations
-kaleido:
-  controllerPhrase: ""
+## ceseal configurations
+ceseal:
+  publicPort: 19999

@@ -177,7 +177,7 @@ function purge()
         elif [ x"$mode" == x"storage" ]; then
             purge_bucket
             purge_chain
-        elif [ x"$mode" == x"watcher" ]; then
+        elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
             purge_chain
         fi
         return $?

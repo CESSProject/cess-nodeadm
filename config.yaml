@@ -1,6 +1,6 @@
 ## node configurations
 node:
-  ## the mode of node: authority/storage/watcher
+  ## the mode of node: authority/storage/rpcnode
   mode: "authority"
   chainWsUrl: ""
   profile: testnet

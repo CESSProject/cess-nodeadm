@@ -30,7 +30,7 @@ config_show() {
     elif [[ $mode = "storage" ]]; then
         keys=('"node"' '"bucket"')
 
-    elif [[ $mode = "watcher" ]]; then
+    elif [[ $mode = "watcher" || $mode = "rpcnode" ]]; then
         keys=('"node"')
     fi
     local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
@@ -89,19 +89,19 @@ set_node_mode() {
     local current=$mode
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess node mode from 'authority/storage/watcher' (current: $current, press enter to skip): " to_set
+            read -p "Enter cess node mode from 'authority/storage/rpcnode' (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess node mode from 'authority/storage/watcher' (default: $default): " to_set
+            read -p "Enter cess node mode from 'authority/storage/rpcnode' (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"watcher" ]; then
+            if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"rpcnode" ]; then
                 if [ x"$to_set" != x"$mode" ]; then
                     mode=$to_set
                 fi
                 break
             else
-                log_err "Input error, please input 'authority' 'storage' or 'watcher'"
+                log_err "Input error, please input 'authority' 'storage' or 'rpcnode'"
                 continue
             fi
         elif [ x"$current" == x"" ]; then
@@ -606,7 +606,7 @@ function pull_images_by_mode() {
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-bucket
-    elif [ x"$mode" == x"watcher" ]; then
+    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         try_pull_image cess-chain
     else
         log_err "the node mode is invalid, please config again"
@@ -652,7 +652,7 @@ function config_set_all() {
         set_bucket_use_cpu_cores
         set_bucket_staking_account
         set_bucket_reserved_tws
-    elif [ x"$mode" == x"watcher" ]; then
+    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         set_chain_name
         set_chain_pruning_mode
     else
@@ -781,7 +781,11 @@ config_generate() {
             mkdir -p $base_mode_path/bucket/
         fi
         cp $build_dir/bucket/* $base_mode_path/bucket/
-    elif [ x"$mode" == x"watcher" ]; then
+    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
+        if [[ -d /opt/cess/watcher ]]; then
+            #Preserve potential chain data before changing to rpcnode
+            mv /opt/cess/watcher $base_mode_path
+        fi
         if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/
         fi

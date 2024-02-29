@@ -1,6 +1,9 @@
 #!/bin/bash
 
-local_base_dir=$(cd `dirname $0`;pwd)
+local_base_dir=$(
+    cd $(dirname $0)
+    pwd
+)
 local_script_dir=$local_base_dir/scripts
 install_dir=/opt/cess/nodeadm
 source $local_script_dir/utils.sh
@@ -16,9 +19,8 @@ if [ x"$DISTRO" != x"Ubuntu" ] && [ x"$DISTRO" != x"CentOS" ]; then
     exit 1
 fi
 
-help()
-{
-cat << EOF
+help() {
+    cat <<EOF
 Usage:
     help                  show help information
     --skip-dep            skip install the dependencies for cess-nodeadm
@@ -26,11 +28,10 @@ Usage:
     --docker-mirror       optional, Aliyun or AzureChinaCloud
     --no-rmi              do not remove the corresponding image when uninstalling the service
 EOF
-exit 0
+    exit 0
 }
 
-install_dependencies()
-{
+install_dependencies() {
     if [ x"$skip_dep" == x"true" ]; then
         return 0
     fi
@@ -54,7 +55,7 @@ install_dependencies()
             exit 1
         fi
         log_info "------------Install depenencies--------------"
-        yum install -y git jq curl wget net-tools        
+        yum install -y git jq curl wget net-tools
     fi
 
     if [ $? -ne 0 ]; then
@@ -65,16 +66,16 @@ install_dependencies()
     need_install_yq=1
     while [ $need_install_yq -eq 1 ]; do
         if command_exists yq; then
-            ya_ver=$(yq -V 2> /dev/null | awk '{print $NF}' | cut -d . -f 1,2 | sed -r 's/^[vV]//')
+            ya_ver=$(yq -V 2>/dev/null | awk '{print $NF}' | cut -d . -f 1,2 | sed -r 's/^[vV]//')
             if [ ! -z "$ya_ver" ] && is_ver_a_ge_b $ya_ver 4.25; then
                 need_install_yq=0
             fi
         fi
         if [ $need_install_yq -eq 1 ]; then
             echo "Begin download yq ..."
-            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /tmp/yq \
-              && mv /tmp/yq /usr/bin/yq \
-              && chmod +x /usr/bin/yq
+            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /tmp/yq &&
+                mv /tmp/yq /usr/bin/yq &&
+                chmod +x /usr/bin/yq
             if [ $? -eq 0 ]; then
                 log_success "yq is successfully installed!"
                 yq -V
@@ -120,22 +121,21 @@ install_dependencies()
                 exit 1
             fi
         fi
-    elif [ x"$DISTRO" == x"CentOS" ]; then        
+    elif [ x"$DISTRO" == x"CentOS" ]; then
         local n=$(rpm -qa | grep docker-compose-plugin | wc -l)
         if [ $n -eq 0 ]; then
             yum install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
-                log_err "Install docker-compose-plugin failed"                
+                log_err "Install docker-compose-plugin failed"
                 exit 1
             fi
         fi
     fi
-    
+
     sysctl -w net.core.rmem_max=2500000
 }
 
-install_cess_node()
-{    
+install_cess_node() {
     local dst_bin=/usr/bin/cess
     local dst_config=$install_dir/config.yaml
     local dst_utils_sh=$install_dir/scripts/utils.sh
@@ -148,9 +148,9 @@ install_cess_node()
     if [ -f "$src_utils_sh" ]; then
         new_version=$(cat $src_utils_sh | grep nodeadm_version | awk -F = '{gsub(/"/,"");print $2}')
     fi
-    
+
     echo "Begin install cess nodeadm $new_version"
-    
+
     if [ -f "$dst_config" ] && [ x"$retain_config" != x"true" ]; then
         log_info "WARNING: It is detected that you may have previously installed cess nodeadm $old_version"
         log_info "         and that a new installation will overwrite the original configuration."
@@ -190,7 +190,7 @@ install_cess_node()
 
     cp -r $local_base_dir/scripts $install_dir/
     cp -r $local_base_dir/sgx-software-enable $install_dir/
-     
+
     cp $local_script_dir/cess.sh $dst_bin
     chmod +x $dst_bin
     cp $local_base_dir/tee.conf $install_dir/
@@ -202,31 +202,32 @@ skip_dep="false"
 retain_config="false"
 no_rmi=0
 
-while true ; do
+while true; do
     case "$1" in
-        --docker-mirror)
-            docker_mirror=$2
-            shift 2
-            ;;
-        --skip-dep)
-            skip_dep="true"
-            shift 1
-            ;;
-        --retain-config)
-            retain_config="true"
-            shift 1
-            ;;
-        --no-rmi)
-            no_rmi=1
-            shift 1
-            ;;
-        "")
-            shift ;
-            break ;;
-        *)
-            help
-            break;
-            ;;
+    --docker-mirror)
+        docker_mirror=$2
+        shift 2
+        ;;
+    --skip-dep)
+        skip_dep="true"
+        shift 1
+        ;;
+    --retain-config)
+        retain_config="true"
+        shift 1
+        ;;
+    --no-rmi)
+        no_rmi=1
+        shift 1
+        ;;
+    "")
+        shift
+        break
+        ;;
+    *)
+        help
+        break
+        ;;
     esac
 done
 

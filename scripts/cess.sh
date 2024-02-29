@@ -7,8 +7,7 @@ source /opt/cess/nodeadm/scripts/tools.sh
 
 ########################################base################################################
 
-start()
-{
+start() {
     if [ ! -f "$compose_yaml" ]; then
         log_err "No configuration file, please set config"
         exit 1
@@ -25,17 +24,16 @@ start()
 
         local current_kld_sgx_image_id=$(docker inspect -f '{{.Image}}' kld-sgx 2>/dev/null)
         if [[ $stored_kld_sgx_image_id != $current_kld_sgx_image_id ]]; then
-            yq -i eval ".node.kldSgxImageId=\"$current_kld_sgx_image_id\"" $config_file            
+            yq -i eval ".node.kldSgxImageId=\"$current_kld_sgx_image_id\"" $config_file
         fi
     else
         docker compose -f $compose_yaml up -d $1
     fi
-    
+
     return $?
 }
 
-stop()
-{
+stop() {
     if [ ! -f "$compose_yaml" ]; then
         log_err "No configuration file, please set config"
         exit 1
@@ -68,11 +66,11 @@ reload() {
             docker compose -f $compose_yaml up -d
         fi
         return $?
-    fi    
+    fi
 
     docker compose -f $compose_yaml rm -fs $1
     if [ $? -eq 0 ]; then
-        docker compose -f $compose_yaml up -d        
+        docker compose -f $compose_yaml up -d
     fi
     return $?
 }
@@ -93,13 +91,11 @@ function pullimg() {
     fi
 }
 
-status()
-{
+status() {
     docker ps -a -f "label=com.docker.compose.project=cess-$mode" --format 'table {{.Names}}\t{{.Status}}'
 }
 
-bucket_ops()
-{
+bucket_ops() {
     if [ ! -f "$compose_yaml" ]; then
         log_err "No configuration file, please set config"
         return 1
@@ -110,43 +106,43 @@ bucket_ops()
         volumes="-v "$volumes
     fi
 
-    local bucket_image="cesslab/cess-bucket:$profile"    
+    local bucket_image="cesslab/cess-bucket:$profile"
     local cmd="docker run --rm --network=host $volumes $bucket_image"
     local -r cfg_arg="-c /opt/bucket/config.yaml"
     case "$1" in
-        increase)
+    increase)
+        $cmd $1 $2 $3 $cfg_arg
+        ;;
+    exit)
+        $cmd $1 $cfg_arg
+        ;;
+    withdraw)
+        $cmd $1 $cfg_arg
+        ;;
+    stat)
+        $cmd $1 $cfg_arg
+        ;;
+    reward)
+        $cmd $1 $2 $cfg_arg
+        ;;
+    claim)
+        $cmd $1 $2 $cfg_arg
+        ;;
+    update)
+        if [ "$2" == "earnings" ]; then
             $cmd $1 $2 $3 $cfg_arg
-            ;;
-        exit)
-            $cmd $1 $cfg_arg
-            ;;
-        withdraw)
-            $cmd $1 $cfg_arg
-            ;;
-        stat)
-            $cmd $1 $cfg_arg
-            ;;
-        reward)
-            $cmd $1 $2 $cfg_arg
-            ;;
-        claim)
-            $cmd $1 $2 $cfg_arg
-            ;;
-        update)
-            if [ "$2" == "earnings" ]; then
-                $cmd $1 $2 $3 $cfg_arg
-            else
-                bucket_ops_help
-            fi
-            ;;
-        *)
+        else
             bucket_ops_help
+        fi
+        ;;
+    *)
+        bucket_ops_help
+        ;;
     esac
 }
 
-bucket_ops_help()
-{
-cat << EOF
+bucket_ops_help() {
+    cat <<EOF
 cess bucket usage (only on storage mode):
     increase [amount]                   Increase the stakes of storage miner
     exit                                Unregister the storage miner role
@@ -158,8 +154,7 @@ cess bucket usage (only on storage mode):
 EOF
 }
 
-function purge()
-{
+function purge() {
     log_info "WARNING: this operate can remove your data regarding program and can't revert."
     log_info "         Make sure you understand you do!"
     printf "Press \033[0;33mY\033[0m if you really want to do: "
@@ -196,8 +191,7 @@ function purge()
     return 1
 }
 
-function purge_chain()
-{
+function purge_chain() {
     stop chain
     rm -rf /opt/cess/$mode/chain/*
     if [ $? -eq 0 ]; then
@@ -205,8 +199,7 @@ function purge_chain()
     fi
 }
 
-function purge_bucket()
-{
+function purge_bucket() {
     stop bucket
     rm -rf /opt/cess/$mode/bucket/*
     if [ $? -eq 0 ]; then
@@ -225,9 +218,8 @@ function purge_ceseal() {
 
 ######################################main entrance############################################
 
-help()
-{
-cat << EOF
+help() {
+    cat <<EOF
 Usage:
     help                                      show help information
     version                                   show version
@@ -252,53 +244,54 @@ EOF
 load_profile
 
 case "$1" in
-    version)
-        version
-        ;;
-    start)
-        shift
-        start $@
-        ;;
-    stop)
-        stop $2
-        ;;
-    restart)
-        shift
-        reload $@
-        ;;
-    reload)
-        shift
-        reload $@
-        ;;
-    down)
-        down
-        ;;
-    status)
-        status $2
-        ;;
-    pullimg)
-        pullimg
-        ;;
-    purge)
-        shift
-        purge $@
-        ;;
-    bucket)
-        shift
-        bucket_ops $@
-        ;;
-    config)
-        shift
-        config $@
-        ;;
-    profile)
-        set_profile $2
-        ;;
-    tools)
-        shift
-        tools $@
-        ;;
-    *)
-        help
+version)
+    version
+    ;;
+start)
+    shift
+    start $@
+    ;;
+stop)
+    stop $2
+    ;;
+restart)
+    shift
+    reload $@
+    ;;
+reload)
+    shift
+    reload $@
+    ;;
+down)
+    down
+    ;;
+status)
+    status $2
+    ;;
+pullimg)
+    pullimg
+    ;;
+purge)
+    shift
+    purge $@
+    ;;
+bucket)
+    shift
+    bucket_ops $@
+    ;;
+config)
+    shift
+    config $@
+    ;;
+profile)
+    set_profile $2
+    ;;
+tools)
+    shift
+    tools $@
+    ;;
+*)
+    help
+    ;;
 esac
 exit 0

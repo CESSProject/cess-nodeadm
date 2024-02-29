@@ -2,8 +2,7 @@
 
 source /opt/cess/nodeadm/scripts/utils.sh
 
-version()
-{
+version() {
     printf "Node mode: ${mode}\n"
     printf "Profile: ${profile}\n"
     printf "nodeadm version: ${nodeadm_version}\n"
@@ -17,8 +16,7 @@ version()
     fi
 }
 
-inner_docker_version()
-{
+inner_docker_version() {
     printf "Docker images:\n"
     show_version "config-gen" "cesslab/config-gen" "version"
 
@@ -37,7 +35,7 @@ function show_version() {
     local image_tag=$profile
     local version_cmd=$3
     local extra_docker_opts=$4
-    local image_hash=(`docker images | grep '^\b'$image_name'\b ' | grep $image_tag`)
+    local image_hash=($(docker images | grep '^\b'$image_name'\b ' | grep $image_tag))
     image_hash=${image_hash[2]}
     local version=$(docker run --rm $extra_docker_opts $image_name:$image_tag $version_cmd)
     printf "  $prog_name: ${version} ${image_hash}\n"

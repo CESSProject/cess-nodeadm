@@ -1,6 +1,6 @@
 ## node configurations
 node:
-  ## the mode of node: authority/storage/watcher
+  ## the mode of node: authority/storage/rpcnode
   mode: "authority"
   chainWsUrl: ""
   profile: testnet
@@ -20,6 +20,6 @@ bucket:
   signPhrase: ""
   diskPath: ""
 
-## kaleido configurations
-kaleido:
-  controllerPhrase: ""
+## ceseal configurations
+ceseal:
+  publicPort: 19999

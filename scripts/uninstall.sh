@@ -2,10 +2,10 @@
 
 no_rmi=0
 case "$1" in
-    --no-rmi)
-        no_rmi=1
-        shift 1
-        ;;
+--no-rmi)
+    no_rmi=1
+    shift 1
+    ;;
 esac
 
 install_dir=/opt/cess/nodeadm
@@ -31,7 +31,7 @@ if [[ -f $podr2_key ]]; then
     rm $podr2_key
 fi
 
-if [ -f "$bin_file" ]; then    
+if [ -f "$bin_file" ]; then
     rm /usr/bin/cess
 fi
 

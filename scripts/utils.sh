@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nodeadm_version="v0.5.4"
+nodeadm_version="v0.5.5"
 aliyun_address="region.cn-hangzhou.aliyuncs.com"
 
 base_dir=/opt/cess/nodeadm
@@ -10,23 +10,19 @@ build_dir=$base_dir/build
 compose_yaml=$build_dir/docker-compose.yaml
 profile="testnet"
 
-function echo_c()
-{
+function echo_c() {
     printf "\033[0;$1m$2\033[0m\n"
 }
 
-function log_info()
-{
+function log_info() {
     echo_c 33 "$1"
 }
 
-function log_success()
-{
+function log_success() {
     echo_c 32 "$1"
 }
 
-function log_err()
-{
+function log_err() {
     echo_c 35 "[ERROR] $1"
 }
 
@@ -36,26 +32,26 @@ function log_err()
 # 1:  level
 function msg_color {
     priority=$1
-    if [[ $priority == "fatal" ]] ; then
+    if [[ $priority == "fatal" ]]; then
         echo -e "\033[31m"
-    elif [[ $priority == "error" ]] ; then
+    elif [[ $priority == "error" ]]; then
         echo -e "\033[34m"
-    elif [[ $priority == "warning" ]] ; then
+    elif [[ $priority == "warning" ]]; then
         echo -e "\033[35m"
-    elif [[ $priority == "info" ]] ; then
+    elif [[ $priority == "info" ]]; then
         echo -e "\033[36m"
-    elif [[ $priority == "debug" ]] ; then
+    elif [[ $priority == "debug" ]]; then
         echo -e "\033[37m"
-    elif [[ $priority == "default" ]] ; then
+    elif [[ $priority == "default" ]]; then
         echo -e "\033[00m"
     else
-        echo -e "\033[32m";
+        echo -e "\033[32m"
     fi
 }
 
 check_port() {
     local port=$1
-    local grep_port=`netstat -tlpn | grep "\b$port\b"`
+    local grep_port=$(netstat -tlpn | grep "\b$port\b")
     if [ -n "$grep_port" ]; then
         log_err "please make sure port $port is not occupied"
         return 1
@@ -63,9 +59,8 @@ check_port() {
 }
 
 ## 0 for running, 2 for error, 1 for stop
-check_docker_status()
-{
-    local exist=`docker inspect --format '{{.State.Running}}' $1 2>/dev/null`
+check_docker_status() {
+    local exist=$(docker inspect --format '{{.State.Running}}' $1 2>/dev/null)
     if [ x"${exist}" == x"true" ]; then
         return 0
     elif [ "${exist}" == "false" ]; then
@@ -76,16 +71,14 @@ check_docker_status()
 }
 
 ## rnd=$(rand 1 50)
-rand()
-{
+rand() {
     min=$1
-    max=$(($2-$min+1))
+    max=$(($2 - $min + 1))
     num=$(date +%s%N)
-    echo $(($num%$max+$min))
+    echo $(($num % $max + $min))
 }
 
-ensure_root()
-{
+ensure_root() {
     if [ $(id -u) -ne 0 ]; then
         log_err "Please run with sudo!"
         exit 1
@@ -95,8 +88,7 @@ ensure_root()
 PM=""
 DISTRO=""
 
-get_distro_name()
-{
+get_distro_name() {
     if grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         DISTRO='Ubuntu'
         PM='apt'
@@ -125,8 +117,7 @@ get_distro_name()
     return 0
 }
 
-function set_profile()
-{
+function set_profile() {
     local to_set=$1
     if [ -z $to_set ]; then
         log_info "current profile: $profile"
@@ -141,11 +132,10 @@ function set_profile()
     return 1
 }
 
-function load_profile()
-{
-    local p="`yq eval ".node.profile" $config_file`"
+function load_profile() {
+    local p="$(yq eval ".node.profile" $config_file)"
     if [ x"$p" == x"devnet" ] || [ x"$p" == x"testnet" ] || [ x"$p" == x"mainnet" ]; then
-        profile=$p        
+        profile=$p
         return 0
     fi
     log_err "the profile: $p of config file is invalid, use default value: $profile"
@@ -153,7 +143,7 @@ function load_profile()
 }
 
 function command_exists() {
-	command -v "$@" > /dev/null 2>&1
+    command -v "$@" >/dev/null 2>&1
 }
 
 # is_ver_a_ge_b compares two CalVer (YY.MM) version strings. returns 0 (success)
@@ -166,23 +156,23 @@ function command_exists() {
 # is_ver_a_ge_b 20.10 20.10 // 0 (success)
 # is_ver_a_ge_b 19.03 20.10 // 1 (fail)
 function is_ver_a_ge_b() (
-	set +x
+    set +x
 
-	yy_a="$(echo "$1" | cut -d'.' -f1)"
-	yy_b="$(echo "$2" | cut -d'.' -f1)"
+    yy_a="$(echo "$1" | cut -d'.' -f1)"
+    yy_b="$(echo "$2" | cut -d'.' -f1)"
     if [ "$yy_a" -lt "$yy_b" ]; then
-		return 1
-	fi
-	if [ "$yy_a" -gt "$yy_b" ]; then
-		return 0
-	fi
-	mm_a="$(echo "$1" | cut -d'.' -f2)"
+        return 1
+    fi
+    if [ "$yy_a" -gt "$yy_b" ]; then
+        return 0
+    fi
+    mm_a="$(echo "$1" | cut -d'.' -f2)"
     mm_b="$(echo "$2" | cut -d'.' -f2)"
     if [ "${mm_a}" -lt "${mm_b}" ]; then
-		return 1
-	fi
+        return 1
+    fi
 
-	return 0
+    return 0
 )
 
 join_by() {
@@ -194,10 +184,10 @@ join_by() {
 function your_cpu_core_number() {
     local cpu_s=$(awk -F':' '/physical id/ {print $NF+1}' /proc/cpuinfo | tail -n 1)
     local cpu_sockets=$(awk -F':' '/^siblings/ {print $NF+0;exit}' /proc/cpuinfo)
-    echo $(($cpu_s*$cpu_sockets))
+    echo $(($cpu_s * $cpu_sockets))
 }
 
-is_uint() { case $1        in '' | *[!0-9]*              ) return 1;; esac ;}
-is_int()  { case ${1#[-+]} in '' | *[!0-9]*              ) return 1;; esac ;}
-is_unum() { case $1        in '' | . | *[!0-9.]* | *.*.* ) return 1;; esac ;}
-is_num()  { case ${1#[-+]} in '' | . | *[!0-9.]* | *.*.* ) return 1;; esac ;}
+is_uint() { case $1 in '' | *[!0-9]*) return 1 ;; esac }
+is_int() { case ${1#[-+]} in '' | *[!0-9]*) return 1 ;; esac }
+is_unum() { case $1 in '' | . | *[!0-9.]* | *.*.*) return 1 ;; esac }
+is_num() { case ${1#[-+]} in '' | . | *[!0-9.]* | *.*.*) return 1 ;; esac }

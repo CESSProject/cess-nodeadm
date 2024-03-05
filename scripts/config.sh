@@ -9,17 +9,7 @@ if [ $? -ne 0 ]; then
 fi
 
 readonly local_chain_ws_url="ws://127.0.0.1:9944"
-readonly host_docker_chain_ws_url="ws://cess-chain:9944"
-default_chain_ws_url=$local_chain_ws_url
-
-function reset_default_chain_url_by_mode() {
-    if [ x"$mode" == x"authority" ]; then
-        default_chain_ws_url=$host_docker_chain_ws_url
-    else
-        default_chain_ws_url=$local_chain_ws_url
-    fi
-}
-reset_default_chain_url_by_mode
+readonly local_chain_ws_url_in_docker="ws://cess-chain:9944"
 
 config_help() {
     cat <<EOF
@@ -30,18 +20,22 @@ cess config usage:
     generate                generate new configurations
     pull-image              download corresponding images after set config
     chain-port {port}       set chain port and generate new configuration, default is 30336
-    conn-chain {ws}         set conneted chain ws and generate new configuration, default is $default_chain_ws_url
 EOF
 }
 
 config_show() {
     local keys=
     if [[ $mode = "authority" ]]; then
-        keys=('"node"' '"chain"' '"ceseal"')
+        keys=('"node"' '"ceseal"')
     elif [[ $mode = "storage" ]]; then
-        keys=('"node"' '"chain"' '"bucket"')
-    elif [[ $mode = "watcher" ]]; then
-        keys=('"node"' '"chain"')
+        keys=('"node"' '"bucket"')
+
+    elif [[ $mode = "watcher" || $mode = "rpcnode" ]]; then
+        keys=('"node"')
+    fi
+    local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
+    if [[ $use_external_chain -eq 0 ]]; then
+        keys+=('"chain"')
     fi
     local ss=$(join_by , ${keys[@]})
     yq eval ". |= pick([$ss])" $config_file -o json
@@ -95,23 +89,23 @@ set_node_mode() {
     local current=$mode
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess node mode from 'authority/storage/watcher' (current: $current, press enter to skip): " to_set
+            read -p "Enter cess node mode from 'authority/storage/rpcnode' (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess node mode from 'authority/storage/watcher' (default: $default): " to_set
+            read -p "Enter cess node mode from 'authority/storage/rpcnode' (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"watcher" ]; then
+            if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"rpcnode" ]; then
                 if [ x"$to_set" != x"$mode" ]; then
                     mode=$to_set
                 fi
                 break
             else
-                log_err "Input error, please input 'authority' 'storage' or 'watcher'"
+                log_err "Input error, please input 'authority' 'storage' or 'rpcnode'"
                 continue
             fi
         elif [ x"$current" == x"" ]; then
-            mode=$default            
+            mode=$default
         fi
         break
     done
@@ -129,69 +123,13 @@ set_node_mode() {
     fi
 }
 
-set_external_ip() {
-    local ip=""
-    local current="$(yq eval ".node.externalIp" $config_file)"
-    while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter external ip for the machine (current: $current, press enter to skip): " ip
-        else
-            read -p "Enter external ip for the machine: " ip
-        fi
-        ip=$(echo "$ip")
-        if [ x"$ip" != x"" ]; then
-            yq -i eval ".node.externalIp=\"$ip\"" $config_file
-            break
-        elif [ x"$current" != x"" ]; then
-            break
-        fi
-    done
+function assign_ceseal_chain_to_local() {
+    #TODO: will deprecated in next version
+    yq -i eval "del(.node.chainWsUrl)" $config_file
+    yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
 }
 
-set_domain_name() {
-    local to_set=""
-    local current="$(yq eval ".node.domainName" $config_file)"
-    while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter a domain name for the machine (current: $current, press enter to skip): " to_set
-        else
-            read -p "Enter a domain name for the machine: " to_set
-        fi
-        to_set=$(echo "$to_set")
-        if [ x"$to_set" != x"" ]; then
-            yq -i eval ".node.domainName=\"$to_set\"" $config_file
-            break
-        elif [ x"$current" != x"" ]; then
-            break
-        fi
-    done
-}
-
-set_chain_ws_url() {
-    local -r default=$default_chain_ws_url
-    local to_set=""
-    local current="$(yq eval ".node.chainWsUrl //\"\"" $config_file)"
-    if [ x"$current" == x"$local_chain_ws_url" ] || [ x"$current" == x"$host_docker_chain_ws_url" ]; then
-        current=""
-    fi
-    if [ x"$current" != x"" ]; then
-        read -p "Enter cess chain ws url (current: $current, press enter to skip): " to_set
-    else
-        read -p "Enter cess chain ws url (default: $default): " to_set
-    fi
-    to_set=$(echo "$to_set")
-    if [ x"$to_set" != x"" ]; then
-        yq -i eval ".node.chainWsUrl=\"$to_set\"" $config_file
-    elif [ x"$current" == x"" ]; then
-        yq -i eval ".node.chainWsUrl=\"$default\"" $config_file
-    fi
-}
-
-function assign_chain_ws_url_to_local() {
-    yq -i eval ".node.chainWsUrl=\"$local_chain_ws_url\"" $config_file
-}
-
-function assign_backup_chain_ws_urls_by_profile() {
+function assign_bucket_backup_chain_ws_urls() {
     local chain_urls=
     if [[ $profile = "testnet" ]]; then
         chain_urls=(
@@ -211,7 +149,7 @@ function assign_backup_chain_ws_urls_by_profile() {
             quoted+=(\"${chain_urls[$ix]}\")
         done
         local ss=$(join_by , ${quoted[@]})
-        yq -i eval ".node.backupChainWsUrls=[$ss]" $config_file
+        yq -i eval ".bucket.backupChainWsUrls=[$ss]" $config_file
     fi
 }
 
@@ -233,7 +171,7 @@ set_ceseal_stash_account() {
 set_tee_type() {
     local tee_type=""
     while true; do
-        if [ x"$1" == x"" ];then
+        if [ x"$1" == x"" ]; then
             # read -p "Enter what kind of tee worker would you want to be [Certifier/Marker]: " tee_type
             # if [ x"$tee_type" != x"Certifier" ] && [ x"$tee_type" != x"Marker" ];then
             #     echo "Please enter 'Certifier' or 'Marker'!"
@@ -243,7 +181,7 @@ set_tee_type() {
             tee_type="Marker"
         else
             read -p "Enter what kind of tee worker would you want to be [Full/Verifier]: " tee_type
-            if [ x"$tee_type" != x"Full" ] && [ x"$tee_type" != x"Verifier" ];then
+            if [ x"$tee_type" != x"Full" ] && [ x"$tee_type" != x"Verifier" ]; then
                 echo "Please enter 'Full' or 'Verifier'!"
                 continue
             fi
@@ -327,9 +265,51 @@ function set_ceseal_endpoint() {
     fi
 }
 
-function assign_ceseal_podr2_max_threads() {
-    local n=$(your_cpu_core_number)
-    yq -i eval ".ceseal.podr2MaxThreads=\"$n\"" $config_file
+set_bucket_chain_to_use() {
+    #TODO: will deprecated in next version
+    yq -i eval "del(.node.chainWsUrl)" $config_file
+    yq -i eval "del(.node.backupChainWsUrls)" $config_file
+
+    local current_external_chain=$(yq eval ".node.externalChain //0" $config_file)
+    local current_ws_url="$(yq eval ".bucket.chainWsUrl //\"\"" $config_file)"
+    local prompt=
+    if [[ $current_ws_url == $local_chain_ws_url || -z $current_ws_url ]]; then
+        prompt="current: local-chain, to use an external chain, type WS-URL directly, or press enter to skip"
+    else
+        prompt="current: $current_ws_url, to use the local chain, type 'L' key, or press enter to skip"
+    fi
+
+    local to_set=
+    read -p "Enter cess rpc ws-url ($prompt): " to_set
+
+    if [[ -z $to_set && ! -z $current_ws_url ]]; then
+        return
+    fi
+    local is_use_external_chain=
+    local url_value=
+    local is_local_to_external=
+    if [[ $to_set =~ ^[lL]?$ ]]; then
+        if [[ $current_external_chain -eq 0 ]]; then
+            return
+        fi
+        is_use_external_chain=0
+        url_value=$local_chain_ws_url
+    else
+        if [[ "$to_set" == "$current_ws_url" ]]; then
+            return
+        fi
+        is_use_external_chain=1
+        url_value=$to_set
+        is_local_to_external=1
+    fi
+    if [[ ! -z $is_local_to_external ]]; then
+        local cid=$(docker ps -a --filter "name=chain" --format "{{.ID}}")
+        if [[ $? -eq 0 && ! -z $cid && -f "$compose_yaml" ]]; then
+            need_remove_service_before_gen=1
+        fi
+    fi
+    yq -i eval ".node.externalChain=$is_use_external_chain" $config_file
+    yq -i eval ".bucket.chainWsUrl=\"$url_value\"" $config_file
 }
 
 set_bucket_income_account() {
@@ -474,9 +454,9 @@ function set_bucket_staking_account() {
     local to_set=
     local current="$(yq eval ".bucket.stakerAccount //\"\"" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the staking account if you have another (current: $current, press enter to skip or 'n' to reset): " to_set
+        read -p "Enter the staking account if you use one account to stake multiple nodes (current: $current, press enter to skip or 'n' to reset): " to_set
     else
-        read -p "Enter the staking account if you have another (if it is the same as the signature account, press enter to skip): " to_set
+        read -p "Enter the staking account if you use one account to stake multiple nodes (if it is the same as the signature account, press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
@@ -492,9 +472,9 @@ function set_bucket_reserved_tws() {
     local to_set=
     local current="$(yq eval ".bucket.reservedTws //[] | join(\",\")" $config_file)"
     if [[ "$current" != "" ]]; then
-        read -p "Enter the reserved TEE worker endpoints (current: $current, separate multiple values with commas, press enter to skip or 'n' to reset): " to_set
+        read -p "Enter the TEE worker endpoints if you have any (current: $current, separate multiple values with commas, press enter to skip or 'n' to reset): " to_set
     else
-        read -p "Enter the reserved TEE worker endpoints (separate multiple values with commas, press enter to skip): " to_set
+        read -p "Enter the TEE worker endpoints if you have any (separate multiple values with commas, press enter to skip): " to_set
     fi
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
@@ -520,7 +500,7 @@ function set_chain_pruning_mode() {
         if [[ "$to_set" != "" ]]; then
             if [[ "$to_set" != "archive" ]]; then
                 if [ -n "$to_set" ] && [ "$to_set" -eq "$to_set" ] 2>/dev/null; then
-                    if (( $to_set < 256 )); then
+                    if (($to_set < 256)); then
                         log_err "the pruning mode must greater than 255 when as a number"
                         continue
                     fi
@@ -537,20 +517,6 @@ function set_chain_pruning_mode() {
         fi
         break
     done
-}
-
-function set_allow_log_collection() {
-    local current="$(yq eval ".ceseal.allowLogCollection" $config_file)"
-    if [[ "$current" = true ]]; then
-        return
-    fi
-    local to_set=""
-    read -p "❤️  Help us improve TEE Worker with anonymous crash reports & basic usage data? (y/n) : " to_set
-    if [[ $to_set =~ ^[yY](es)?$ ]]; then
-        yq -i eval ".ceseal.allowLogCollection=true" $config_file
-    else
-        yq -i eval ".ceseal.allowLogCollection=false" $config_file
-    fi
 }
 
 function try_pull_image() {
@@ -583,7 +549,7 @@ function pull_images_by_mode() {
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-bucket
-    elif [ x"$mode" == x"watcher" ]; then
+    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         try_pull_image cess-chain
     else
         log_err "the node mode is invalid, please config again"
@@ -612,15 +578,14 @@ function config_set_all() {
 
     if [ x"$mode" == x"authority" ]; then
         set_chain_name
-        set_chain_ws_url
         set_ceseal_port
         set_ceseal_endpoint
         set_tee_type "$(set_ceseal_stash_account)"
         set_ceseal_mnemonic_for_tx
-        #set_allow_log_collection
-        #assign_ceseal_podr2_max_threads
+        assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then
         set_bucket_port
+        set_bucket_chain_to_use
         set_bucket_income_account
         set_bucket_sign_phrase
         set_bucket_disk_path
@@ -628,7 +593,7 @@ function config_set_all() {
         set_bucket_use_cpu_cores
         set_bucket_staking_account
         set_bucket_reserved_tws
-    elif [ x"$mode" == x"watcher" ]; then
+    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         set_chain_name
         set_chain_pruning_mode
     else
@@ -645,24 +610,6 @@ function config_set_all() {
     fi
 
     # Generate configurations
-    config_generate $@
-
-    # Pull images
-    # if [[ ! -v DISABLE_PULL_IMG_AFTER_CFG_SET ]]; then
-    #     pull_images_by_mode
-    # fi
-}
-
-config_conn_chain() {
-    if [ x"$1" = x"" ]; then
-        log_err "Please give connceted chain ws."
-        config_help
-        return 1
-    fi
-    yq -i eval ".node.chainWsUrl=\"$1\"" $config_file
-    log_success "Set connected chain ws '$1' successfully"
-
-    shift
     config_generate $@
 }
 
@@ -704,6 +651,8 @@ function install_sgx_enable_if_absent() {
     return 1
 }
 
+need_remove_service_before_gen=
+
 config_generate() {
     local cg_image="cesslab/config-gen:$profile"
     while getopts ":p" opt; do
@@ -721,10 +670,12 @@ config_generate() {
 
     if [[ $mode = "storage" ]]; then
         assign_bucket_boot_addrs
-        assign_chain_ws_url_to_local
-        assign_backup_chain_ws_urls_by_profile
-    elif [[ $mode = "watcher" ]]; then
-        assign_chain_ws_url_to_local
+        assign_bucket_backup_chain_ws_urls
+    fi
+
+    if [[ ! -z $need_remove_service_before_gen ]]; then
+        log_info "need remove service before generate new config"
+        docker compose -f $compose_yaml down
     fi
 
     log_info "Start generate configurations and docker compose file"
@@ -766,7 +717,11 @@ config_generate() {
             mkdir -p $base_mode_path/bucket/
         fi
         cp $build_dir/bucket/* $base_mode_path/bucket/
-    elif [ x"$mode" == x"watcher" ]; then
+    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
+        if [[ -d /opt/cess/watcher ]]; then
+            #Preserve potential chain data before changing to rpcnode
+            mv /opt/cess/watcher $base_mode_path
+        fi
         if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/
         fi
@@ -790,10 +745,6 @@ config() {
     set)
         shift
         config_set_all $@
-        ;;
-    conn-chain)
-        shift
-        config_conn_chain $@
         ;;
     chain-port)
         shift

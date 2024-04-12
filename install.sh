@@ -45,7 +45,7 @@ install_dependencies() {
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y git jq curl wget net-tools
+        apt-get install -y git jq curl wget net-tools netcat
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"
@@ -55,7 +55,7 @@ install_dependencies() {
             exit 1
         fi
         log_info "------------Install depenencies--------------"
-        yum install -y git jq curl wget net-tools
+        yum install -y git jq curl wget net-tools nmap-ncat
     fi
 
     if [ $? -ne 0 ]; then

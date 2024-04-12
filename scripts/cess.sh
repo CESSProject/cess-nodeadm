@@ -171,7 +171,13 @@ function purge() {
         purge_bucket
         return $?
     fi
-    help
+
+    if [ x"$1" = x"ceseal" ]; then
+        purge_ceseal
+        return $?
+    fi
+
+    log_err "purge with bad argument, usage: purge {chain|ceseal|bucket}"    
     return 1
 }
 

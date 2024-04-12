@@ -26,11 +26,6 @@ if [ -f "$compose_yaml" ]; then
     docker compose -f $compose_yaml down -v --remove-orphans $rmi_opt
 fi
 
-podr2_key=/opt/cess/authority/kaleido/key/encrypted/podr2_key
-if [[ -f $podr2_key ]]; then
-    rm $podr2_key
-fi
-
 if [ -f "$bin_file" ]; then
     rm /usr/bin/cess
 fi

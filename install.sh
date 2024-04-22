@@ -73,7 +73,17 @@ install_dependencies() {
         fi
         if [ $need_install_yq -eq 1 ]; then
             echo "Begin download yq ..."
-            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_amd64 -O /tmp/yq &&
+            ARCH=$(uname -m)
+            if [ "$ARCH" = "x86_64" ]; then
+                ARCH="amd64"
+            elif [ "$ARCH" = "aarch64" ]; then
+                ARCH="arm64"
+            else
+                echo "Unsupported architecture: $ARCH"
+                exit 1
+            fi
+            echo "detected platform: $ARCH"
+            wget https://github.com/mikefarah/yq/releases/download/v4.25.3/yq_linux_${ARCH} -O /tmp/yq &&
                 mv /tmp/yq /usr/bin/yq &&
                 chmod +x /usr/bin/yq
             if [ $? -eq 0 ]; then

@@ -16,9 +16,8 @@ sudo cess config set
 ### Run service
 
 - Please make sure the following ports are not occupied before starting：
-  - 30336 9933 9948 (for chain)
-  - 10010 (for kld-agent)
-  - 4001 (for kld-sgx)
+  - 30336 9944 (for chain)
+  - 19999 (for ceseal)
   - 15001 (for bucket)
 
 ```shell

@@ -12,24 +12,8 @@ start() {
         log_err "No configuration file, please set config"
         exit 1
     fi
-
-    if [[ $mode = "authority" ]]; then
-        local stored_kld_sgx_image_id="$(yq eval ".node.kldSgxImageId //\"\"" $config_file 2>/dev/null)"
-        local current_kld_sgx_image_id=$(docker inspect -f '{{.Image}}' kld-sgx 2>/dev/null)
-        if [[ $stored_kld_sgx_image_id != $current_kld_sgx_image_id ]] && [[ -n $stored_kld_sgx_image_id ]]; then
-            rm -f /opt/cess/authority/kaleido/key/encrypted/podr2_key
-        fi
-
-        docker compose -f $compose_yaml up -d $1
-
-        local current_kld_sgx_image_id=$(docker inspect -f '{{.Image}}' kld-sgx 2>/dev/null)
-        if [[ $stored_kld_sgx_image_id != $current_kld_sgx_image_id ]]; then
-            yq -i eval ".node.kldSgxImageId=\"$current_kld_sgx_image_id\"" $config_file
-        fi
-    else
-        docker compose -f $compose_yaml up -d $1
-    fi
-
+    
+    docker compose -f $compose_yaml up -d $1
     return $?
 }
 
@@ -187,7 +171,13 @@ function purge() {
         purge_bucket
         return $?
     fi
-    help
+
+    if [ x"$1" = x"ceseal" ]; then
+        purge_ceseal
+        return $?
+    fi
+
+    log_err "purge with bad argument, usage: purge {chain|ceseal|bucket}"    
     return 1
 }
 
@@ -221,23 +211,23 @@ function purge_ceseal() {
 help() {
     cat <<EOF
 Usage:
-    help                                      show help information
-    version                                   show version
+    help                                   show help information
+    version                                show version
 
-    start {chain|kld-sgx|kld-agent|bucket}    start all or one cess service
-    stop {chain|kld-sgx|kld-agent|bucket}     stop all or one cess service
-    reload {chain|kld-sgx|kld-agent|bucket}   reload (stop remove then start) all or one service
-    restart {chain|kld-sgx|kld-agent|bucket}  restart all or one cess service
-    down                                      stop and remove all service
+    start {chain|ceseal|cifrost|bucket}    start all or one cess service
+    stop {chain|ceseal|cifrost|bucket}     stop all or one cess service
+    reload {chain|ceseal|cifrost|bucket}   reload (stop remove then start) all or one service
+    restart {chain|ceseal|cifrost|bucket}  restart all or one cess service
+    down                                   stop and remove all service
 
-    status                              check service status
-    pullimg                             update all service images
-    purge {chain|kaleido|bucket}        remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
+    status                                 check service status
+    pullimg                                update all service images
+    purge {chain|ceseal|bucket}            remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
     
-    config {...}                        configuration operations, use 'cess config help' for more details
-    profile {devnet|testnet|mainnet}    switch CESS network profile, testnet for default
-    bucket {...}                        use 'cess bucket help' for more details
-    tools {...}                         use 'cess tools help' for more details
+    config {...}                           configuration operations, use 'cess config help' for more details
+    profile {devnet|testnet|mainnet}       switch CESS network profile, testnet for default
+    bucket {...}                           use 'cess bucket help' for more details
+    tools {...}                            use 'cess tools help' for more details
 EOF
 }
 

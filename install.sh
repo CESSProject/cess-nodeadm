@@ -101,7 +101,7 @@ install_dependencies() {
     if [ $need_install_docker -eq 1 ]; then
         # install or update docker
         mirror_opt=''
-        if [ ! -z $docker_mirror]; then
+        if [ ! -z $docker_mirror ]; then
             mirror_opt="--mirror $docker_mirror"
         fi
         curl -fsSL https://get.docker.com | bash -s docker $mirror_opt
@@ -115,6 +115,7 @@ install_dependencies() {
     if [ x"$DISTRO" == x"Ubuntu" ]; then
         local n=$(dpkg -l | grep docker-compose-plugin | wc -l)
         if [ $n -eq 0 ]; then
+            add_docker_ubuntu_repo
             apt-get install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
                 log_err "Install docker-compose-plugin failed"
@@ -124,6 +125,7 @@ install_dependencies() {
     elif [ x"$DISTRO" == x"CentOS" ]; then
         local n=$(rpm -qa | grep docker-compose-plugin | wc -l)
         if [ $n -eq 0 ]; then
+            add_docker_centos_repo
             yum install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
                 log_err "Install docker-compose-plugin failed"

@@ -6,7 +6,7 @@ tools_help() {
     cat <<EOF
 cess tools usage:
     rotate-keys                                            generate session key of chain node
-    space-info                                             show information about bucket disk
+    space-info                                             show information about miner disk
     help                                                   show help information
 EOF
 }
@@ -16,7 +16,7 @@ space_info() {
         log_info "Only on storage mode"
         exit 1
     fi
-    local disk_path=$(yq eval ".bucket.diskPath" $config_file)
+    local disk_path=$(yq eval ".miner.diskPath" $config_file)
     local info=($(df -h $disk_path | sed -n '2p'))
     cat <<EOF
 >>>>>> Mounted disk <<<<<<
@@ -48,7 +48,7 @@ set_extra_cmd_args() {
     local name=$1
     shift
     local cmd_args=$@
-    if [ x"$name" == x"chain" ] || [ x"$name" == x"bucket" ]; then
+    if [ x"$name" == x"chain" ] || [ x"$name" == x"miner" ]; then
         if [ x"$cmd_args" == x"" ]; then
             log_err "cmd_args must not be empty"
             return 1
@@ -59,7 +59,7 @@ set_extra_cmd_args() {
             return 0
         fi
     else
-        log_err "invalid container name: $name, options: {chain|bucket}"
+        log_err "invalid container name: $name, options: {chain|miner}"
     fi
     return 1
 }

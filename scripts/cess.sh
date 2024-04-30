@@ -79,20 +79,20 @@ status() {
     docker ps -a -f "label=com.docker.compose.project=cess-$mode" --format 'table {{.Names}}\t{{.Status}}'
 }
 
-bucket_ops() {
+miner_ops() {
     if [ ! -f "$compose_yaml" ]; then
         log_err "No configuration file, please set config"
         return 1
     fi
 
-    local volumes=$(yq eval ".services.bucket.volumes" $base_dir/build/docker-compose.yaml | cut -d\' -f 2 | sed -n '1h;1!H;${g;s/\n/ -v /g;p;}')
+    local volumes=$(yq eval ".services.miner.volumes" $base_dir/build/docker-compose.yaml | cut -d\' -f 2 | sed -n '1h;1!H;${g;s/\n/ -v /g;p;}')
     if [ x"$volumes" != x"" ]; then
         volumes="-v "$volumes
     fi
 
-    local bucket_image="cesslab/cess-bucket:$profile"
-    local cmd="docker run --rm --network=host $volumes $bucket_image"
-    local -r cfg_arg="-c /opt/bucket/config.yaml"
+    local miner_image="cesslab/cess-miner:$profile"
+    local cmd="docker run --rm --network=host $volumes $miner_image"
+    local -r cfg_arg="-c /opt/miner/config.yaml"
     case "$1" in
     increase)
         $cmd $1 $2 $3 $cfg_arg
@@ -116,18 +116,18 @@ bucket_ops() {
         if [ "$2" == "earnings" ]; then
             $cmd $1 $2 $3 $cfg_arg
         else
-            bucket_ops_help
+            miner_ops_help
         fi
         ;;
     *)
-        bucket_ops_help
+        miner_ops_help
         ;;
     esac
 }
 
-bucket_ops_help() {
+miner_ops_help() {
     cat <<EOF
-cess bucket usage (only on storage mode):
+cess miner usage (only on storage mode):
     increase [amount]                   Increase the stakes of storage miner
     exit                                Unregister the storage miner role
     withdraw                            Withdraw stakes
@@ -154,7 +154,7 @@ function purge() {
             purge_chain
             purge_ceseal
         elif [ x"$mode" == x"storage" ]; then
-            purge_bucket
+            purge_miner
             purge_chain
         elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
             purge_chain
@@ -167,8 +167,8 @@ function purge() {
         return $?
     fi
 
-    if [ x"$1" = x"bucket" ]; then
-        purge_bucket
+    if [ x"$1" = x"miner" ]; then
+        purge_miner
         return $?
     fi
 
@@ -177,7 +177,7 @@ function purge() {
         return $?
     fi
 
-    log_err "purge with bad argument, usage: purge {chain|ceseal|bucket}"    
+    log_err "purge with bad argument, usage: purge {chain|ceseal|miner}"
     return 1
 }
 
@@ -189,11 +189,11 @@ function purge_chain() {
     fi
 }
 
-function purge_bucket() {
-    stop bucket
-    rm -rf /opt/cess/$mode/bucket/*
+function purge_miner() {
+    stop miner
+    rm -rf /opt/cess/$mode/miner/*
     if [ $? -eq 0 ]; then
-        log_success "purge bucket data success"
+        log_success "purge miner data success"
     fi
 }
 
@@ -214,19 +214,19 @@ Usage:
     help                                   show help information
     version                                show version
 
-    start {chain|ceseal|cifrost|bucket}    start all or one cess service
-    stop {chain|ceseal|cifrost|bucket}     stop all or one cess service
-    reload {chain|ceseal|cifrost|bucket}   reload (stop remove then start) all or one service
-    restart {chain|ceseal|cifrost|bucket}  restart all or one cess service
+    start {chain|ceseal|cifrost|miner}     start all or one cess service
+    stop {chain|ceseal|cifrost|miner}      stop all or one cess service
+    reload {chain|ceseal|cifrost|miner}    reload (stop remove then start) all or one service
+    restart {chain|ceseal|cifrost|miner}   restart all or one cess service
     down                                   stop and remove all service
 
     status                                 check service status
     pullimg                                update all service images
-    purge {chain|ceseal|bucket}            remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do 
+    purge {chain|ceseal|miner}             remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do
     
     config {...}                           configuration operations, use 'cess config help' for more details
     profile {devnet|testnet|mainnet}       switch CESS network profile, testnet for default
-    bucket {...}                           use 'cess bucket help' for more details
+    miner {...}                            use 'cess miner help' for more details
     tools {...}                            use 'cess tools help' for more details
 EOF
 }
@@ -265,9 +265,9 @@ purge)
     shift
     purge $@
     ;;
-bucket)
+miner)
     shift
-    bucket_ops $@
+    miner_ops $@
     ;;
 config)
     shift

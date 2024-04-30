@@ -12,8 +12,8 @@ chain:
   ## the port of chain node
   port: 30336
 
-## bucket configurations
-bucket:
+## miner configurations
+miner:
   port: 15001
   space: 300
   incomeAccount: ""

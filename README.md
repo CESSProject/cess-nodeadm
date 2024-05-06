@@ -18,7 +18,7 @@ sudo cess config set
 - Please make sure the following ports are not occupied before starting：
   - 30336 9944 (for chain)
   - 19999 (for ceseal)
-  - 15001 (for bucket)
+  - 15001 (for miner)
 
 ```shell
 sudo cess help

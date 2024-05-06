@@ -28,7 +28,7 @@ config_show() {
     if [[ $mode = "authority" ]]; then
         keys=('"node"' '"ceseal"')
     elif [[ $mode = "storage" ]]; then
-        keys=('"node"' '"bucket"')
+        keys=('"node"' '"miner"')
 
     elif [[ $mode = "watcher" || $mode = "rpcnode" ]]; then
         keys=('"node"')
@@ -129,7 +129,7 @@ function assign_ceseal_chain_to_local() {
     yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
 }
 
-function assign_bucket_backup_chain_ws_urls() {
+function assign_miner_backup_chain_ws_urls() {
     local chain_urls=
     if [[ $profile = "testnet" ]]; then
         chain_urls=(
@@ -149,7 +149,7 @@ function assign_bucket_backup_chain_ws_urls() {
             quoted+=(\"${chain_urls[$ix]}\")
         done
         local ss=$(join_by , ${quoted[@]})
-        yq -i eval ".bucket.backupChainWsUrls=[$ss]" $config_file
+        yq -i eval ".miner.backupChainWsUrls=[$ss]" $config_file
     fi
 }
 
@@ -265,13 +265,13 @@ function set_ceseal_endpoint() {
     fi
 }
 
-set_bucket_chain_to_use() {
+set_miner_chain_to_use() {
     #TODO: will deprecated in next version
     yq -i eval "del(.node.chainWsUrl)" $config_file
     yq -i eval "del(.node.backupChainWsUrls)" $config_file
 
     local current_external_chain=$(yq eval ".node.externalChain //0" $config_file)
-    local current_ws_url="$(yq eval ".bucket.chainWsUrl //\"\"" $config_file)"
+    local current_ws_url="$(yq eval ".miner.chainWsUrl //\"\"" $config_file)"
     local prompt=
     if [[ $current_ws_url == $local_chain_ws_url || -z $current_ws_url ]]; then
         prompt="current: local-chain, to use an external chain, type WS-URL directly, or press enter to skip"
@@ -309,12 +309,12 @@ set_bucket_chain_to_use() {
         fi
     fi
     yq -i eval ".node.externalChain=$is_use_external_chain" $config_file
-    yq -i eval ".bucket.chainWsUrl=\"$url_value\"" $config_file
+    yq -i eval ".miner.chainWsUrl=\"$url_value\"" $config_file
 }
 
-set_bucket_income_account() {
+set_miner_income_account() {
     local to_set=""
-    local current="$(yq eval ".bucket.incomeAccount" $config_file)"
+    local current="$(yq eval ".miner.incomeAccount" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
             read -p "Enter cess storage earnings account (current: $current, press enter to skip): " to_set
@@ -323,7 +323,7 @@ set_bucket_income_account() {
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            yq -i eval ".bucket.incomeAccount=\"$to_set\"" $config_file
+            yq -i eval ".miner.incomeAccount=\"$to_set\"" $config_file
             break
         elif [ x"$current" != x"" ]; then
             break
@@ -331,9 +331,9 @@ set_bucket_income_account() {
     done
 }
 
-set_bucket_sign_phrase() {
+set_miner_sign_phrase() {
     local to_set=""
-    local current="$(yq eval ".bucket.signPhrase" $config_file)"
+    local current="$(yq eval ".miner.signPhrase" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
             read -p "Enter cess storage signature account phrase (current: $current, press enter to skip): " to_set
@@ -342,7 +342,7 @@ set_bucket_sign_phrase() {
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            yq -i eval ".bucket.signPhrase=\"$to_set\"" $config_file
+            yq -i eval ".miner.signPhrase=\"$to_set\"" $config_file
             break
         elif [ x"$current" != x"" ]; then
             break
@@ -350,10 +350,10 @@ set_bucket_sign_phrase() {
     done
 }
 
-set_bucket_disk_path() {
+set_miner_disk_path() {
     local -r default="/opt/cess/storage/disk"
     local to_set=""
-    local current="$(yq eval ".bucket.diskPath" $config_file)"
+    local current="$(yq eval ".miner.diskPath" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
             read -p "Enter cess storage disk path (current: $current, press enter to skip): " to_set
@@ -375,7 +375,7 @@ set_bucket_disk_path() {
             if [[ $need_create =~ ^[yY](es)?$ ]]; then
                 mkdir -p $to_update_path
                 if [[ $? -eq 0 ]]; then
-                    yq -i eval ".bucket.diskPath=\"$to_update_path\"" $config_file
+                    yq -i eval ".miner.diskPath=\"$to_update_path\"" $config_file
                     break
                 fi
             fi
@@ -384,15 +384,15 @@ set_bucket_disk_path() {
             log_err "The path: $to_update_path is not a directory"
             continue
         else
-            yq -i eval ".bucket.diskPath=\"$to_update_path\"" $config_file
+            yq -i eval ".miner.diskPath=\"$to_update_path\"" $config_file
             break
         fi
     done
 }
 
-set_bucket_disk_spase() {
+set_miner_disk_spase() {
     local to_set=""
-    local current="$(yq eval ".bucket.space" $config_file)"
+    local current="$(yq eval ".miner.space" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
             read -p "Enter cess storage space, by GB unit (current: $current, press enter to skip): " to_set
@@ -401,7 +401,7 @@ set_bucket_disk_spase() {
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            yq -i eval ".bucket.space=$to_set" $config_file
+            yq -i eval ".miner.space=$to_set" $config_file
             break
         elif [ x"$current" != x"" ]; then
             break
@@ -409,9 +409,9 @@ set_bucket_disk_spase() {
     done
 }
 
-set_bucket_port() {
+set_miner_port() {
     local to_set=""
-    local current="$(yq eval ".bucket.port" $config_file)"
+    local current="$(yq eval ".miner.port" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
             read -p "Enter cess storage listener port (current: $current, press enter to skip): " to_set
@@ -421,7 +421,7 @@ set_bucket_port() {
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
             if check_port $to_set; then
-                yq -i eval ".bucket.port=$to_set" $config_file
+                yq -i eval ".miner.port=$to_set" $config_file
                 break
             fi
         elif [ x"$current" != x"" ]; then
@@ -430,10 +430,10 @@ set_bucket_port() {
     done
 }
 
-function set_bucket_use_cpu_cores() {
+function set_miner_use_cpu_cores() {
     local cpu_core_number=$(your_cpu_core_number)
     local to_set=""
-    local current="$(yq eval ".bucket.useCpuCores //0" $config_file)"
+    local current="$(yq eval ".miner.useCpuCores //0" $config_file)"
     while true; do
         echo "Enter the number of CPU cores used for mining; Your CPU cores are ${cpu_core_number}"
         read -p "  (current: $current, 0 means all cores are used; press enter to skip): " to_set
@@ -442,7 +442,7 @@ function set_bucket_use_cpu_cores() {
         fi
         expr ${to_set} + 0 >/dev/null 2>&1
         if [[ $? -eq 0 && $to_set -ge 0 && $to_set -le ${cpu_core_number} || "$to_set" = "0" ]]; then
-            yq -i eval ".bucket.useCpuCores=$to_set" $config_file
+            yq -i eval ".miner.useCpuCores=$to_set" $config_file
             break
         else
             log_err "Please enter an integer between 0 and ${cpu_core_number}. Your input is incorrect. Please re-enter!"
@@ -450,9 +450,9 @@ function set_bucket_use_cpu_cores() {
     done
 }
 
-function set_bucket_staking_account() {
+function set_miner_staking_account() {
     local to_set=
-    local current="$(yq eval ".bucket.stakerAccount //\"\"" $config_file)"
+    local current="$(yq eval ".miner.stakerAccount //\"\"" $config_file)"
     if [[ "$current" != "" ]]; then
         read -p "Enter the staking account if you use one account to stake multiple nodes (current: $current, press enter to skip or 'n' to reset): " to_set
     else
@@ -461,16 +461,16 @@ function set_bucket_staking_account() {
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
         if [[ $to_set =~ ^[nN](o)?$ ]]; then
-            yq -i eval "del(.bucket.stakerAccount)" $config_file
+            yq -i eval "del(.miner.stakerAccount)" $config_file
         else
-            yq -i eval ".bucket.stakerAccount=\"$to_set\"" $config_file
+            yq -i eval ".miner.stakerAccount=\"$to_set\"" $config_file
         fi
     fi
 }
 
-function set_bucket_reserved_tws() {
+function set_miner_reserved_tws() {
     local to_set=
-    local current="$(yq eval ".bucket.reservedTws //[] | join(\",\")" $config_file)"
+    local current="$(yq eval ".miner.reservedTws //[] | join(\",\")" $config_file)"
     if [[ "$current" != "" ]]; then
         read -p "Enter the TEE worker endpoints if you have any (current: $current, separate multiple values with commas, press enter to skip or 'n' to reset): " to_set
     else
@@ -479,10 +479,10 @@ function set_bucket_reserved_tws() {
     to_set=$(echo "$to_set")
     if [[ "$to_set" != "" ]]; then
         if [[ $to_set =~ ^[nN](o)?$ ]]; then
-            yq -i eval "del(.bucket.reservedTws)" $config_file
+            yq -i eval "del(.miner.reservedTws)" $config_file
         else
             to_set=\"$(echo $to_set | sed 's/,/","/g')\"
-            yq -i eval ".bucket.reservedTws=[$to_set]" $config_file
+            yq -i eval ".miner.reservedTws=[$to_set]" $config_file
         fi
     fi
 }
@@ -548,7 +548,7 @@ function pull_images_by_mode() {
         try_pull_image cifrost
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
-        try_pull_image cess-bucket
+        try_pull_image cess-miner
     elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         try_pull_image cess-chain
     else
@@ -559,11 +559,11 @@ function pull_images_by_mode() {
     return 0
 }
 
-function assign_bucket_boot_addrs() {
-    local boot_domain="boot-bucket-$profile.cess.cloud"
+function assign_miner_boot_addrs() {
+    local boot_domain="boot-miner-$profile.cess.cloud"
     local boot_addr="_dnsaddr.$boot_domain"
     if [ x"$mode" == x"storage" ]; then
-        yq -i eval ".bucket.bootAddr=\"$boot_addr\"" $config_file
+        yq -i eval ".miner.bootAddr=\"$boot_addr\"" $config_file
         return 0
     fi
     return 1
@@ -584,15 +584,15 @@ function config_set_all() {
         set_ceseal_mnemonic_for_tx
         assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then
-        set_bucket_port
-        set_bucket_chain_to_use
-        set_bucket_income_account
-        set_bucket_sign_phrase
-        set_bucket_disk_path
-        set_bucket_disk_spase
-        set_bucket_use_cpu_cores
-        set_bucket_staking_account
-        set_bucket_reserved_tws
+        set_miner_port
+        set_miner_chain_to_use
+        set_miner_income_account
+        set_miner_sign_phrase
+        set_miner_disk_path
+        set_miner_disk_spase
+        set_miner_use_cpu_cores
+        set_miner_staking_account
+        set_miner_reserved_tws
     elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         set_chain_name
         set_chain_pruning_mode
@@ -669,8 +669,8 @@ config_generate() {
     fi
 
     if [[ $mode = "storage" ]]; then
-        assign_bucket_boot_addrs
-        assign_bucket_backup_chain_ws_urls
+        assign_miner_boot_addrs
+        assign_miner_backup_chain_ws_urls
     fi
 
     if [[ ! -z $need_remove_service_before_gen ]]; then
@@ -717,10 +717,10 @@ config_generate() {
         fi
         cp $build_dir/chain/* $base_mode_path/chain/
 
-        if [ ! -d $base_mode_path/bucket/ ]; then
-            mkdir -p $base_mode_path/bucket/
+        if [ ! -d $base_mode_path/miner/ ]; then
+            mkdir -p $base_mode_path/miner/
         fi
-        cp $build_dir/bucket/* $base_mode_path/bucket/
+        cp $build_dir/miner/* $base_mode_path/miner/
     elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
         if [[ -d /opt/cess/watcher ]]; then
             #Preserve potential chain data before changing to rpcnode

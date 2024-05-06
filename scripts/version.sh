@@ -25,7 +25,7 @@ inner_docker_version() {
         show_version "cifrost" "cesslab/cifrost" "--version"
         show_version "ceseal" "cesslab/ceseal" "--version" "--entrypoint ./ceseal"
     elif [ x"$mode" == x"storage" ]; then
-        show_version "bucket" "cesslab/cess-bucket" "version"
+        show_version "miner" "cesslab/cess-miner" "version"
     fi
 }
 

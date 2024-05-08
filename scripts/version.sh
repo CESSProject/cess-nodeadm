@@ -23,7 +23,7 @@ inner_docker_version() {
     show_version "chain" "cesslab/cess-chain" "--version"
     if [ x"$mode" == x"authority" ]; then
         show_version "cifrost" "cesslab/cifrost" "--version"
-        show_version "ceseal" "cesslab/ceseal" "--version" "--entrypoint ./ceseal"
+        show_version "ceseal" "cesslab/ceseal" '-c "EXTRA_OPTS=version ./start.sh" 2>&1 | tail -n 2 | head -n 1' "--device /dev/sgx_enclave --device /dev/sgx_provision --entrypoint /bin/bash -e SLEEP_BEFORE_START=0"
     elif [ x"$mode" == x"storage" ]; then
         show_version "miner" "cesslab/cess-miner" "version"
     fi
@@ -37,6 +37,7 @@ function show_version() {
     local extra_docker_opts=$4
     local image_hash=($(docker images | grep '^\b'$image_name'\b ' | grep $image_tag))
     image_hash=${image_hash[2]}
-    local version=$(docker run --rm $extra_docker_opts $image_name:$image_tag $version_cmd)
+    local cmd=$(echo docker run --rm $extra_docker_opts $image_name:$image_tag $version_cmd)
+    local version=$(eval "$cmd")
     printf "  $prog_name: ${version} ${image_hash}\n"
 }

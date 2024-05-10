@@ -23,7 +23,7 @@ function log_success() {
 }
 
 function log_err() {
-    echo_c 35 "[ERROR] $1"
+    echo_c 35 "[ERROR] $1" >&2
 }
 
 # print the right color for each level

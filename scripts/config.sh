@@ -154,44 +154,38 @@ function assign_miner_backup_chain_ws_urls() {
 }
 
 set_ceseal_stash_account() {
+    if [ x"$1" == x"Marker" ]; then
+        echo -e "\033[33mAs a 'Marker' you don't need to configure stash account\033[0m"
+        return
+    fi
     local stash_acc=""
     local current="$(yq eval ".ceseal.stashAccount //\"\"" $config_file)"
     read -p "Enter cess validator stash account (current: $current, press enter to skip): " stash_acc
     if [ x"$stash_acc" == x"" ]; then
         stash_acc=$(echo "$current")
     fi
-    if [ x"$stash_acc" != x"null" ]; then
+    if [ x"$stash_acc" != x"" ]; then
         yq -i eval ".ceseal.stashAccount=\"$stash_acc\"" $config_file
     else
+        log_err "Please do not fill in the stash account with null value!"
+        set_ceseal_stash_account
         stash_acc=""
     fi
-    echo "$stash_acc"
 }
 
 set_tee_type() {
     local tee_type=""
     while true; do
-        if [ x"$1" == x"" ]; then
-            # read -p "Enter what kind of tee worker would you want to be [Certifier/Marker]: " tee_type
-            # if [ x"$tee_type" != x"Certifier" ] && [ x"$tee_type" != x"Marker" ];then
-            #     echo "Please enter 'Certifier' or 'Marker'!"
-            #     continue
-            # fi
-            echo -e "\033[33mYour Tee worker will work as 'Marker'!\033[0m"
-            tee_type="Marker"
-        else
-            read -p "Enter what kind of tee worker would you want to be [Full/Verifier]: " tee_type
-            if [ x"$tee_type" != x"Full" ] && [ x"$tee_type" != x"Verifier" ]; then
-                echo "Please enter 'Full' or 'Verifier'!"
-                continue
-            fi
-        fi
-        tee_type=$(echo "$tee_type")
-        if [ x"$tee_type" != x"" ]; then
+        read -p "Enter what kind of tee worker would you want to be [Full/Verifier/Marker]: " tee_type
+        if [ x"$tee_type" == x"Full" ] || [ x"$tee_type" == x"Verifier" ] || [ x"$tee_type" == x"Marker" ]; then
             yq -i eval ".ceseal.role=\"$tee_type\"" $config_file
             break
+        else
+            log_err "Please fill in the correct tee role type!"
+            continue
         fi
     done
+    echo "$tee_type"
 }
 
 set_ceseal_mnemonic_for_tx() {
@@ -580,7 +574,7 @@ function config_set_all() {
         set_chain_name
         set_ceseal_port
         set_ceseal_endpoint
-        set_tee_type "$(set_ceseal_stash_account)"
+        set_ceseal_stash_account $(set_tee_type)
         set_ceseal_mnemonic_for_tx
         assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then

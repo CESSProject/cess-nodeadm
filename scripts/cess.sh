@@ -211,23 +211,23 @@ function purge_ceseal() {
 help() {
     cat <<EOF
 Usage:
-    help                                   show help information
-    version                                show version
+    help                                        show help information
+    version                                     show version
 
-    start {chain|ceseal|cifrost|miner}     start all or one cess service
-    stop {chain|ceseal|cifrost|miner}      stop all or one cess service
-    reload {chain|ceseal|cifrost|miner}    reload (stop remove then start) all or one service
-    restart {chain|ceseal|cifrost|miner}   restart all or one cess service
-    down                                   stop and remove all service
+    start {chain|ceseal|cifrost|miner}          start all or one cess service
+    stop {chain|ceseal|cifrost|miner}           stop all or one cess service
+    reload {chain|ceseal|cifrost|miner}         reload (stop remove then start) all or one service
+    restart {chain|ceseal|cifrost|miner}        restart all or one cess service
+    down                                        stop and remove all service
 
-    status                                 check service status
-    pullimg                                update all service images
-    purge {chain|ceseal|miner}             remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do
+    status                                      check service status
+    pullimg                                     update all service images
+    purge {chain|ceseal|miner}                  remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do
     
-    config {...}                           configuration operations, use 'cess config help' for more details
-    profile {devnet|testnet|mainnet}       switch CESS network profile, testnet for default
-    miner {...}                            use 'cess miner help' for more details
-    tools {...}                            use 'cess tools help' for more details
+    config {...}                                configuration operations, use 'cess config help' for more details
+    profile {devnet|testnet|mainnet|ownnet}     switch CESS network profile, testnet for default
+    miner {...}                                 use 'cess miner help' for more details
+    tools {...}                                 use 'cess tools help' for more details
 EOF
 }
 

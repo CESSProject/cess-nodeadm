@@ -226,6 +226,23 @@ function set_ceseal_port() {
     done
 }
 
+function set_ra_method() {
+    local to_set=""
+    local current="$(yq eval ".ceseal.raType //\"\"" $config_file)"
+    while true; do
+        if [ x"$current" != x"" ]; then
+            read -p "Enter the type of remote attestation method 'ias/dcap' (current: $current, press enter to skip): " to_set
+        else
+            read -p "Enter the type of remote attestation method 'ias/dcap': " to_set
+        fi
+        to_set=$(echo "$to_set")
+        if [[ x"$to_set" == x"ias" || x"$to_set" == x"dcap" ]]; then
+            yq -i eval ".ceseal.raType=\"$to_set\"" $config_file
+            break
+        fi
+    done
+}
+
 function set_ceseal_endpoint() {
     local current="$(yq eval ".ceseal.endpointOnChain //\"\"" $config_file)"
     local input_uri=
@@ -573,6 +590,7 @@ function config_set_all() {
     if [ x"$mode" == x"authority" ]; then
         set_chain_name
         set_ceseal_port
+        set_ra_method
         set_ceseal_endpoint
         set_ceseal_stash_account $(set_tee_type)
         set_ceseal_mnemonic_for_tx

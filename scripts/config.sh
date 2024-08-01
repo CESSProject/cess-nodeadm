@@ -133,8 +133,8 @@ function assign_miner_backup_chain_ws_urls() {
     local chain_urls=
     if [[ $profile = "testnet" ]]; then
         chain_urls=(
-            "wss://testnet-rpc0.cess.cloud/ws/"
-            "wss://testnet-rpc1.cess.cloud/ws/"
+            "wss://testnet-rpc.cess.cloud/ws/"
+            "wss://testnet-rpc.cess.network/ws/"
         )
     elif [[ $profile = "devnet" ]]; then
         chain_urls=(

@@ -41,6 +41,7 @@ install_dependencies() {
         apt-get update
         if [ $? -ne 0 ]; then
             log_err "Apt update failed"
+            log_err "Please check your network or apt source"
             exit 1
         fi
 
@@ -52,6 +53,7 @@ install_dependencies() {
         yum update
         if [ $? -ne 0 ]; then
             log_err "Yum update failed"
+            log_err "Please check your network or yum source"
             exit 1
         fi
         log_info "------------Install depenencies--------------"
@@ -59,8 +61,8 @@ install_dependencies() {
     fi
 
     if [ $? -ne 0 ]; then
-        log_err "Install libs failed"
-        exit 1
+        log_err "Failed to install some libs"
+        log_info "Can install it manually and ignore this error log"
     fi
 
     need_install_yq=1
@@ -94,7 +96,7 @@ install_dependencies() {
     done
     if ! command_exists yq; then
         log_err "Install yq failed"
-        exit 1
+        log_info "Can install 'yq' manually and ignore this error log"
     fi
 
     need_install_docker=1
@@ -117,7 +119,7 @@ install_dependencies() {
         curl -fsSL https://get.docker.com | bash -s docker $mirror_opt
         if [ $? -ne 0 ]; then
             log_err "Install docker failed"
-            exit 1
+            log_info "Can install docker manually and ignore this error log"
         fi
     fi
 
@@ -129,7 +131,7 @@ install_dependencies() {
             apt-get install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
                 log_err "Install docker-compose-plugin failed"
-                exit 1
+                log_info "Can install docker compose manually and ignore this error log"
             fi
         fi
     elif [ x"$DISTRO" == x"CentOS" ]; then
@@ -139,7 +141,7 @@ install_dependencies() {
             yum install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
                 log_err "Install docker-compose-plugin failed"
-                exit 1
+                log_info "Can install docker-compose-plugin manually and ignore this error log"
             fi
         fi
     fi

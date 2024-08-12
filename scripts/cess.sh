@@ -246,7 +246,7 @@ stop)
     ;;
 restart)
     shift
-    reload $@
+    restart $@
     ;;
 reload)
     shift

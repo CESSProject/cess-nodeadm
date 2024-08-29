@@ -49,6 +49,13 @@ function msg_color {
     fi
 }
 
+force_install() {
+    if [ "$1" != "true" ]; then
+        log_err "Can use --ignore-error to skip error and then install the dependencies manually"
+        exit 1
+    fi
+}
+
 check_port() {
     local port=$1
     local grep_port=$(netstat -tlpn | grep "\b$port\b")

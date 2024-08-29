@@ -27,6 +27,7 @@ Usage:
     --retain-config       retain old config when update cess-nodeadm, only valid on update option
     --docker-mirror       optional, Aliyun or AzureChinaCloud
     --no-rmi              do not remove the corresponding image when uninstalling the service
+    --ignore-error        do not exit the script if failed to install the dependencies
 EOF
     exit 0
 }
@@ -60,7 +61,7 @@ install_dependencies() {
 
     if [ $? -ne 0 ]; then
         log_err "Install libs failed"
-        exit 1
+        force_install "$force_install"
     fi
 
     need_install_yq=1
@@ -94,7 +95,7 @@ install_dependencies() {
     done
     if ! command_exists yq; then
         log_err "Install yq failed"
-        exit 1
+        force_install "$force_install"
     fi
 
     need_install_docker=1
@@ -117,7 +118,7 @@ install_dependencies() {
         curl -fsSL https://get.docker.com | bash -s docker $mirror_opt
         if [ $? -ne 0 ]; then
             log_err "Install docker failed"
-            exit 1
+            force_install "$force_install"
         fi
     fi
 
@@ -129,7 +130,7 @@ install_dependencies() {
             apt-get install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
                 log_err "Install docker-compose-plugin failed"
-                exit 1
+                force_install "$force_install"
             fi
         fi
     elif [ x"$DISTRO" == x"CentOS" ]; then
@@ -139,7 +140,7 @@ install_dependencies() {
             yum install -y docker-compose-plugin
             if [ $? -ne 0 ]; then
                 log_err "Install docker-compose-plugin failed"
-                exit 1
+                force_install "$force_install"
             fi
         fi
     fi
@@ -212,6 +213,7 @@ install_cess_node() {
 
 skip_dep="false"
 retain_config="false"
+force_install="false"
 no_rmi=0
 
 while true; do
@@ -230,6 +232,10 @@ while true; do
         ;;
     --no-rmi)
         no_rmi=1
+        shift 1
+        ;;
+    --ignore-error)
+        force_install="true"
         shift 1
         ;;
     "")

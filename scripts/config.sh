@@ -293,7 +293,9 @@ set_miner_chain_to_use() {
 
     local to_set=
     read -p "Enter cess rpc ws-url ($prompt): " to_set
-
+    if [[ -z $current_ws_url ]]; then
+        to_set='L'
+    fi
     if [[ -z $to_set && ! -z $current_ws_url ]]; then
         return
     fi
@@ -301,7 +303,7 @@ set_miner_chain_to_use() {
     local url_value=
     local is_local_to_external=
     if [[ $to_set =~ ^[lL]?$ ]]; then
-        if [[ $current_external_chain -eq 0 ]]; then
+        if [[ $current_external_chain -eq 0 && ! -z $current_ws_url ]]; then
             return
         fi
         is_use_external_chain=0

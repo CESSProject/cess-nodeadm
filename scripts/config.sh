@@ -570,16 +570,6 @@ function pull_images_by_mode() {
     return 0
 }
 
-function assign_miner_boot_addrs() {
-    local boot_domain="boot-miner-$profile.cess.cloud"
-    local boot_addr="_dnsaddr.$boot_domain"
-    if [ x"$mode" == x"storage" ]; then
-        yq -i eval ".miner.bootAddr=\"$boot_addr\"" $config_file
-        return 0
-    fi
-    return 1
-}
-
 function config_set_all() {
     ensure_root
 
@@ -680,8 +670,9 @@ config_generate() {
         exit 1
     fi
 
-    if [[ $mode = "storage" ]]; then
-        assign_miner_boot_addrs
+    if [[ $mode = "storage" ]]; then        
+        #TODO: will deprecated in next version
+        yq -i eval "del(.miner.bootAddr)" $config_file
         assign_miner_backup_chain_ws_urls
     fi
 

@@ -444,6 +444,46 @@ set_miner_port() {
     done
 }
 
+set_miner_endpoint() {
+    local current="$(yq eval ".miner.apiendpoint //\"\"" $config_file)"
+    if [[ -z $current ]]; then
+        echo "Start configuring the endpoint to access Storage-Miner from the internet"
+        read -p "  Do you need to automatically detect extranet address as endpoint? (y/n) " need_detect
+        if [[ $need_detect =~ ^[yY](es)?$ ]]; then
+            max_loop=3
+            for ((count = 0; count < max_loop; count++)); do
+                echo "  Try to get your extranet IP ..."
+                local extIp=$(http_proxy= curl -fsSL ifconfig.net)
+                if [[ $? -eq 0 ]]; then
+                    local port="$(yq eval ".miner.port //19999" $config_file)"
+                    local endpoint="http://$extIp:$port"
+                    echo "  Your Storage-Miner endpoint is $endpoint"
+                    yq -i eval ".miner.apiendpoint=\"$endpoint\"" $config_file
+                    return 0
+                fi
+            done
+            if [ "$count" -eq "$max_loop" ]; then
+                echo "  Failed to detect the extranet address." >&2
+            fi
+        fi
+        echo "  You need to manually enter the endpoint."
+    fi
+    while true; do
+        if [ x"$current" != x"" ]; then
+            read -p "Enter cess storage API endpoint (current: $current, press enter to skip): " to_set
+        else
+            read -p "Enter cess storage API endpoint: " to_set
+        fi
+        to_set=$(echo "$to_set")
+        if [ x"$to_set" != x"" ]; then
+            yq -i eval ".miner.apiendpoint=\"$to_set\"" $config_file
+            break
+        elif [ x"$current" != x"" ]; then
+            break
+        fi
+    done
+}
+
 function set_miner_use_cpu_cores() {
     local cpu_core_number=$(your_cpu_core_number)
     local to_set=""
@@ -590,6 +630,7 @@ function config_set_all() {
         assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then
         set_miner_port
+        set_miner_endpoint
         set_miner_chain_to_use
         set_miner_income_account
         set_miner_sign_phrase

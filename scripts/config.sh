@@ -138,7 +138,7 @@ function assign_miner_backup_chain_ws_urls() {
         )
     elif [[ $profile = "devnet" ]]; then
         chain_urls=(
-            "wss://devnet-rpc.cess.network/ws/"            
+            "wss://devnet-rpc.cess.network/ws/"
         )
     fi
     if [[ -n $chain_urls ]]; then
@@ -748,7 +748,7 @@ config_generate() {
     cp -r $build_dir/.tmp/* $build_dir/
 
     # change '["CMD", "nc", "-zv", "127.0.0.1", "15001"]'   to   ["CMD", "nc", "-zv", "127.0.0.1", "15001"] in docker-compose.yaml
-    yq eval '.' $build_dir/docker-compose.yaml | grep -n "test: " | awk '{print $1}'| cut -d':' -f1 | xargs -I {} sed -i "{}s/'//;{}s/\(.*\)'/\1/" $build_dir/docker-compose.yaml
+    yq eval '.' $build_dir/docker-compose.yaml | grep -n "test: " | awk '{print $1}' | cut -d':' -f1 | xargs -I {} sed -i "{}s/'//;{}s/\(.*\)'/\1/" $build_dir/docker-compose.yaml
 
     rm -rf $build_dir/.tmp
     local base_mode_path=/opt/cess/$mode
@@ -801,7 +801,7 @@ generate_node_key_if_need() {
     local base_path="/opt/cess/data"
     local image_tag=$profile
     local chain_spec="cess-$profile"
-    docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec > /dev/null 2>&1
+    docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec >/dev/null 2>&1
 }
 
 patch_wasm_override_if_testnet() {

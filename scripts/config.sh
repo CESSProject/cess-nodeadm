@@ -753,7 +753,21 @@ config_generate() {
     #chmod -R 0600 $build_dir
     #chmod 0600 $config_file
 
+    generate_node_key_if_need $base_mode_path/chain/
+
     log_success "Configurations generated at: $build_dir"
+}
+
+generate_node_key_if_need() {
+    local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
+    if [[ $use_external_chain -ne 0 ]]; then
+        return
+    fi
+    local host_base_path=$1
+    local base_path="/opt/cess/data"
+    local image_tag=$profile
+    local chain_spec="cess-$profile"
+    docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec > /dev/null 2>&1
 }
 
 config() {

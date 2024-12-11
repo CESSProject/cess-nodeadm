@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nodeadm_version="v0.5.9-alpha"
+nodeadm_version="v0.5.10-premainnet"
 aliyun_address="region.cn-hangzhou.aliyuncs.com"
 
 base_dir=/opt/cess/nodeadm
@@ -153,7 +153,7 @@ function set_profile() {
         log_info "current profile: $profile"
         return 0
     fi
-    if [ x"$to_set" == x"devnet" ] || [ x"$to_set" == x"testnet" ] || [ x"$to_set" == x"mainnet" ] || [ x"$to_set" == x"ownnet" ]; then
+    if [ x"$to_set" == x"devnet" ] || [ x"$to_set" == x"testnet" ] || [ x"$to_set" == x"premainnet" ] || [ x"$to_set" == x"mainnet" ] || [ x"$to_set" == x"ownnet" ]; then
         yq -i eval ".node.profile=\"$to_set\"" $config_file
         log_success "the profile set to $to_set"
         return 0
@@ -164,7 +164,7 @@ function set_profile() {
 
 function load_profile() {
     local p="$(yq eval ".node.profile" $config_file)"
-    if [ x"$p" == x"devnet" ] || [ x"$p" == x"testnet" ] || [ x"$p" == x"mainnet" ] || [ x"$p" == x"ownnet" ]; then
+    if [ x"$p" == x"devnet" ] || [ x"$p" == x"testnet" ] || [ x"$p" == x"premainnet" ] || [ x"$p" == x"mainnet" ] || [ x"$p" == x"ownnet" ]; then
         profile=$p
         return 0
     fi

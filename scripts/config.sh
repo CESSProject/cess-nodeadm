@@ -234,6 +234,9 @@ function set_ra_method() {
             read -p "Enter the type of remote attestation method 'ias/dcap': " to_set
         fi
         to_set=$(echo "$to_set")
+        if [[ -z $to_set ]]; then
+            break
+        fi
         if [[ x"$to_set" == x"ias" || x"$to_set" == x"dcap" ]]; then
             yq -i eval ".ceseal.raType=\"$to_set\"" $config_file
             break

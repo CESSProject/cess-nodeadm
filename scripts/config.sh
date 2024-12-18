@@ -683,6 +683,8 @@ config_generate() {
         exit 1
     fi
 
+    patch_wasm_override_if_testnet
+
     if [[ $mode = "storage" ]]; then
         assign_miner_boot_addrs
         assign_miner_backup_chain_ws_urls
@@ -768,6 +770,13 @@ generate_node_key_if_need() {
     local image_tag=$profile
     local chain_spec="cess-$profile"
     docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec > /dev/null 2>&1
+}
+
+patch_wasm_override_if_testnet() {
+    if [[ $profile != "testnet" ]]; then
+        return 1
+    fi
+    yq -i eval ".chain.extraCmdArgs=\"--wasm-runtime-overrides /opt/cess/wasms\"" $config_file
 }
 
 config() {

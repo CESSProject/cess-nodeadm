@@ -148,6 +148,8 @@ function assign_miner_backup_chain_ws_urls() {
         done
         local ss=$(join_by , ${quoted[@]})
         yq -i eval ".miner.backupChainWsUrls=[$ss]" $config_file
+    else
+        yq -i eval "del(.miner.backupChainWsUrls)" $config_file
     fi
 }
 

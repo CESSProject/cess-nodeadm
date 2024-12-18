@@ -740,7 +740,7 @@ config_generate() {
     docker run --cidfile $cidfile -v $base_dir/etc:/opt/app/etc -v $build_dir/.tmp:/opt/app/.tmp -v $config_file:/opt/app/config.yaml $cg_image
     local res="$?"
     local cid=$(cat $cidfile)
-    docker rm $cid
+    docker rm $cid > /dev/null 2>&1
 
     if [ "$res" -ne "0" ]; then
         log_err "Failed to generate application configs, please check your config.yaml"

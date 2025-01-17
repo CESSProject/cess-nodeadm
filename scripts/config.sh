@@ -123,9 +123,7 @@ set_node_mode() {
     fi
 }
 
-function assign_ceseal_chain_to_local() {
-    #TODO: will deprecated in next version
-    yq -i eval "del(.node.chainWsUrl)" $config_file
+function assign_ceseal_chain_to_local() {    
     yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
 }
 
@@ -278,10 +276,6 @@ function set_ceseal_endpoint() {
 }
 
 set_miner_chain_to_use() {
-    #TODO: will deprecated in next version
-    yq -i eval "del(.node.chainWsUrl)" $config_file
-    yq -i eval "del(.node.backupChainWsUrls)" $config_file
-
     local current_external_chain=$(yq eval ".node.externalChain //0" $config_file)
     local current_ws_url="$(yq eval ".miner.chainWsUrl //\"\"" $config_file)"
     local prompt=

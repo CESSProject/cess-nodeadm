@@ -123,9 +123,7 @@ set_node_mode() {
     fi
 }
 
-function assign_ceseal_chain_to_local() {
-    #TODO: will deprecated in next version
-    yq -i eval "del(.node.chainWsUrl)" $config_file
+function assign_ceseal_chain_to_local() {    
     yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
 }
 
@@ -138,9 +136,7 @@ function assign_miner_backup_chain_ws_urls() {
         )
     elif [[ $profile = "devnet" ]]; then
         chain_urls=(
-            "wss://devnet-rpc.cess.cloud/ws-1/"
-            "wss://devnet-rpc.cess.cloud/ws/"
-            "wss://devnet-rpc.cess.cloud/ws-3/"
+            "wss://devnet-rpc.cess.network/ws/"
         )
     fi
     if [[ -n $chain_urls ]]; then
@@ -280,10 +276,6 @@ function set_ceseal_endpoint() {
 }
 
 set_miner_chain_to_use() {
-    #TODO: will deprecated in next version
-    yq -i eval "del(.node.chainWsUrl)" $config_file
-    yq -i eval "del(.node.backupChainWsUrls)" $config_file
-
     local current_external_chain=$(yq eval ".node.externalChain //0" $config_file)
     local current_ws_url="$(yq eval ".miner.chainWsUrl //\"\"" $config_file)"
     local prompt=
@@ -295,7 +287,9 @@ set_miner_chain_to_use() {
 
     local to_set=
     read -p "Enter cess rpc ws-url ($prompt): " to_set
-
+    if [[ -z $current_ws_url ]]; then
+        to_set='L'
+    fi
     if [[ -z $to_set && ! -z $current_ws_url ]]; then
         return
     fi
@@ -303,7 +297,7 @@ set_miner_chain_to_use() {
     local url_value=
     local is_local_to_external=
     if [[ $to_set =~ ^[lL]?$ ]]; then
-        if [[ $current_external_chain -eq 0 ]]; then
+        if [[ $current_external_chain -eq 0 && ! -z $current_ws_url ]]; then
             return
         fi
         is_use_external_chain=0
@@ -444,6 +438,46 @@ set_miner_port() {
     done
 }
 
+set_miner_endpoint() {
+    local current="$(yq eval ".miner.apiendpoint //\"\"" $config_file)"
+    if [[ -z $current ]]; then
+        echo "Start configuring the endpoint to access Storage-Miner from the internet"
+        read -p "  Do you need to automatically detect extranet address as endpoint? (y/n) " need_detect
+        if [[ $need_detect =~ ^[yY](es)?$ ]]; then
+            max_loop=3
+            for ((count = 0; count < max_loop; count++)); do
+                echo "  Try to get your extranet IP ..."
+                local extIp=$(http_proxy= curl -fsSL ifconfig.net)
+                if [[ $? -eq 0 ]]; then
+                    local port="$(yq eval ".miner.port //19999" $config_file)"
+                    local endpoint="http://$extIp:$port"
+                    echo "  Your Storage-Miner endpoint is $endpoint"
+                    yq -i eval ".miner.apiendpoint=\"$endpoint\"" $config_file
+                    return 0
+                fi
+            done
+            if [ "$count" -eq "$max_loop" ]; then
+                echo "  Failed to detect the extranet address." >&2
+            fi
+        fi
+        echo "  You need to manually enter the endpoint."
+    fi
+    while true; do
+        if [ x"$current" != x"" ]; then
+            read -p "Enter cess storage API endpoint (current: $current, press enter to skip): " to_set
+        else
+            read -p "Enter cess storage API endpoint: " to_set
+        fi
+        to_set=$(echo "$to_set")
+        if [ x"$to_set" != x"" ]; then
+            yq -i eval ".miner.apiendpoint=\"$to_set\"" $config_file
+            break
+        elif [ x"$current" != x"" ]; then
+            break
+        fi
+    done
+}
+
 function set_miner_use_cpu_cores() {
     local cpu_core_number=$(your_cpu_core_number)
     local to_set=""
@@ -573,16 +607,6 @@ function pull_images_by_mode() {
     return 0
 }
 
-function assign_miner_boot_addrs() {
-    local boot_domain="boot-miner-$profile.cess.cloud"
-    local boot_addr="_dnsaddr.$boot_domain"
-    if [ x"$mode" == x"storage" ]; then
-        yq -i eval ".miner.bootAddr=\"$boot_addr\"" $config_file
-        return 0
-    fi
-    return 1
-}
-
 function config_set_all() {
     ensure_root
 
@@ -600,6 +624,7 @@ function config_set_all() {
         assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then
         set_miner_port
+        set_miner_endpoint
         set_miner_chain_to_use
         set_miner_income_account
         set_miner_sign_phrase
@@ -683,8 +708,11 @@ config_generate() {
         exit 1
     fi
 
+    patch_wasm_override_if_testnet
+
     if [[ $mode = "storage" ]]; then
-        assign_miner_boot_addrs
+        #TODO: will deprecated in next version
+        yq -i eval "del(.miner.bootAddr)" $config_file
         assign_miner_backup_chain_ws_urls
     fi
 
@@ -714,7 +742,7 @@ config_generate() {
     cp -r $build_dir/.tmp/* $build_dir/
 
     # change '["CMD", "nc", "-zv", "127.0.0.1", "15001"]'   to   ["CMD", "nc", "-zv", "127.0.0.1", "15001"] in docker-compose.yaml
-    yq eval '.' $build_dir/docker-compose.yaml | grep -n "test: " | awk '{print $1}'| cut -d':' -f1 | xargs -I {} sed -i "{}s/'//;{}s/\(.*\)'/\1/" $build_dir/docker-compose.yaml
+    yq eval '.' $build_dir/docker-compose.yaml | grep -n "test: " | awk '{print $1}' | cut -d':' -f1 | xargs -I {} sed -i "{}s/'//;{}s/\(.*\)'/\1/" $build_dir/docker-compose.yaml
 
     rm -rf $build_dir/.tmp
     local base_mode_path=/opt/cess/$mode
@@ -753,7 +781,28 @@ config_generate() {
     #chmod -R 0600 $build_dir
     #chmod 0600 $config_file
 
+    generate_node_key_if_need $base_mode_path/chain/
+
     log_success "Configurations generated at: $build_dir"
+}
+
+generate_node_key_if_need() {
+    local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
+    if [[ $use_external_chain -ne 0 ]]; then
+        return
+    fi
+    local host_base_path=$1
+    local base_path="/opt/cess/data"
+    local image_tag=$profile
+    local chain_spec="cess-$profile"
+    docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec >/dev/null 2>&1
+}
+
+patch_wasm_override_if_testnet() {
+    if [[ $profile != "testnet" ]]; then
+        return 1
+    fi
+    yq -i eval ".chain.extraCmdArgs=\"--wasm-runtime-overrides /opt/cess/wasms\"" $config_file
 }
 
 config() {

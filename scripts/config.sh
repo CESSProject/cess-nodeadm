@@ -170,18 +170,31 @@ set_ceseal_stash_account() {
 }
 
 set_tee_type() {
-    local tee_type=""
+    local to_set=""
+    local -r default="Full"
+    local current="$(yq eval ".ceseal.role" $config_file)"
     while true; do
-        read -p "Enter what kind of tee worker would you want to be [Full/Verifier/Marker]: " tee_type
-        if [ x"$tee_type" == x"Full" ] || [ x"$tee_type" == x"Verifier" ] || [ x"$tee_type" == x"Marker" ]; then
-            yq -i eval ".ceseal.role=\"$tee_type\"" $config_file
-            break
+        if [ x"$current" != x"" ]; then
+            read -p "Enter what kind of tee worker would you want to be [Full/Verifier/Marker] (current: $current, press enter to skip): " to_set
         else
-            log_err "Please fill in the correct tee role type!"
-            continue
+            read -p "Enter what kind of tee worker would you want to be [Full/Verifier/Marker] (default: $default, press enter to skip): " to_set
         fi
+        to_set=$(echo "$to_set")
+        if [ x"$to_set" != x"" ]; then
+            if [ x"$to_set" == x"Full" ] || [ x"$to_set" == x"Verifier" ] || [ x"$to_set" == x"Marker" ]; then
+                yq -i eval ".ceseal.role=\"$to_set\"" $config_file
+                break
+            else
+                log_err "Incorrect tee role type!"
+                continue
+            fi
+        elif [ x"$current" == x"" ]; then
+            to_set=$default
+            yq -i eval ".ceseal.role=\"$to_set\"" $config_file
+        fi
+        break
     done
-    echo "$tee_type"
+    echo "$to_set"
 }
 
 set_ceseal_mnemonic_for_tx() {

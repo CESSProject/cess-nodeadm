@@ -46,7 +46,7 @@ install_dependencies() {
         fi
 
         log_info "------------Install depenencies--------------"
-        apt-get install -y git jq curl wget net-tools netcat
+        apt-get install -y git jq curl wget net-tools netcat-openbsd
 
     elif [ x"$DISTRO" == x"CentOS" ]; then
         log_info "------------Yum update--------------"

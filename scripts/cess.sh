@@ -150,13 +150,13 @@ function purge() {
     fi
 
     if [ x"$1" = x"" ]; then
-        if [ x"$mode" == x"authority" ]; then
+        if [ x"$mode" == x"tee" ]; then
             purge_chain
             purge_ceseal
         elif [ x"$mode" == x"storage" ]; then
             purge_miner
             purge_chain
-        elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
+        elif [[ "$mode" == "validator" || "$mode" == "rpcnode" ]]; then
             purge_chain
         fi
         return $?

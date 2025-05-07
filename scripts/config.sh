@@ -25,12 +25,12 @@ EOF
 
 config_show() {
     local keys=
-    if [[ $mode = "authority" ]]; then
+    if [[ $mode = "tee" ]]; then
         keys=('"node"' '"ceseal"')
     elif [[ $mode = "storage" ]]; then
         keys=('"node"' '"miner"')
 
-    elif [[ $mode = "watcher" || $mode = "rpcnode" ]]; then
+    elif [[ $mode = "validator" || $mode = "rpcnode" ]]; then
         keys=('"node"')
     fi
     local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
@@ -66,7 +66,7 @@ function is_sgx_satisfied() {
         exit 1
     fi
     if [ x"$DISTRO" != x"Ubuntu" ]; then
-        log_err "Current only support Ubuntu and the kernel version must be greater than 5.11 on authority mode"
+        log_err "Current only support Ubuntu and the kernel version must be greater than 5.11 on tee mode"
         return 1
     fi
     local kernal_version=$(uname -r | cut -d . -f 1,2)
@@ -84,24 +84,24 @@ function is_sgx_satisfied() {
 }
 
 set_node_mode() {
-    local -r default="authority"
+    local -r default="tee"
     local to_set=""
     local current=$mode
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter cess node mode from 'authority/storage/rpcnode' (current: $current, press enter to skip): " to_set
+            read -p "Enter cess node mode from 'tee/storage/validator/rpcnode' (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter cess node mode from 'authority/storage/rpcnode' (default: $default): " to_set
+            read -p "Enter cess node mode from 'tee/storage/validator/rpcnode' (default: $default): " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            if [ x"$to_set" == x"authority" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"rpcnode" ]; then
+            if [ x"$to_set" == x"tee" ] || [ x"$to_set" == x"storage" ] || [ x"$to_set" == x"validator" ] || [ x"$to_set" == x"rpcnode" ]; then
                 if [ x"$to_set" != x"$mode" ]; then
                     mode=$to_set
                 fi
                 break
             else
-                log_err "Input error, please input 'authority' 'storage' or 'rpcnode'"
+                log_err "Input error, please input 'tee' 'storage' 'validator' or 'rpcnode'"
                 continue
             fi
         elif [ x"$current" == x"" ]; then
@@ -109,7 +109,7 @@ set_node_mode() {
         fi
         break
     done
-    if [[ "$mode" = "authority" ]]; then
+    if [[ "$mode" = "tee" ]]; then
         if ! is_sgx_satisfied; then
             exit 2
         fi
@@ -123,7 +123,7 @@ set_node_mode() {
     fi
 }
 
-function assign_ceseal_chain_to_local() {    
+function assign_ceseal_chain_to_local() {
     yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
 }
 
@@ -171,17 +171,17 @@ set_ceseal_stash_account() {
 
 set_tee_type() {
     local to_set=""
-    local -r default="Full"
+    local -r default="full"
     local current="$(yq eval ".ceseal.role" $config_file)"
     while true; do
         if [ x"$current" != x"" ]; then
-            read -p "Enter what kind of tee worker would you want to be [Full/Verifier/Marker] (current: $current, press enter to skip): " to_set
+            read -p "Enter what kind of tee worker would you want to be [full/verifier/marker] (current: $current, press enter to skip): " to_set
         else
-            read -p "Enter what kind of tee worker would you want to be [Full/Verifier/Marker] (default: $default, press enter to skip): " to_set
+            read -p "Enter what kind of tee worker would you want to be [full/verifier/marker] (default: $default, press enter to skip): " to_set
         fi
         to_set=$(echo "$to_set")
         if [ x"$to_set" != x"" ]; then
-            if [ x"$to_set" == x"Full" ] || [ x"$to_set" == x"Verifier" ] || [ x"$to_set" == x"Marker" ]; then
+            if [ x"$to_set" == x"full" ] || [ x"$to_set" == x"verifier" ] || [ x"$to_set" == x"marker" ]; then
                 yq -i eval ".ceseal.role=\"$to_set\"" $config_file
                 break
             else
@@ -272,10 +272,10 @@ function set_ceseal_endpoint() {
     yq -i eval ".ceseal.endpointOnChain=\"$input_uri\"" $config_file
     if [[ $input_uri =~ ^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$ ]]; then
         local set_reverse_proxy=""
-        read -p "Do you need to configure a domain name proxy with one click? (y/n): " set_reverse_proxy
+        read -p "Do you want to configure a domain name proxy with one click? (y/n): " set_reverse_proxy
         if [[ $set_reverse_proxy =~ ^[yY](es)?$ ]]; then
-            yq -i eval ".nginx.confPath=\"/opt/cess/authority/proxy/conf\"" $config_file
-            yq -i eval ".nginx.logPath=\"/opt/cess/authority/proxy/log\"" $config_file
+            yq -i eval ".nginx.confPath=\"/opt/cess/tee/proxy/conf\"" $config_file
+            yq -i eval ".nginx.logPath=\"/opt/cess/tee/proxy/log\"" $config_file
             cleaned_head=$(echo "$input_uri" | sed 's|^http://||; s|^https://||' | sed 's|/$||')
             sed -i "s/\(server_name\s*\).*;/\1$cleaned_head;/" /opt/cess/nodeadm/tee.conf
         fi
@@ -585,9 +585,6 @@ function try_pull_image() {
     local img_tag=$2
 
     local org_name="cesslab"
-    if [ x"$region" == x"cn" ]; then
-        org_name=$aliyun_address/$org_name
-    fi
     if [ -z $img_tag ]; then
         img_tag="$profile"
     fi
@@ -603,14 +600,14 @@ function try_pull_image() {
 
 function pull_images_by_mode() {
     log_info "try pull images, node mode: $mode"
-    if [ x"$mode" == x"authority" ]; then
+    if [ x"$mode" == x"tee" ]; then
         try_pull_image cess-chain
         try_pull_image ceseal
         try_pull_image cifrost
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-miner
-    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
+    elif [[ "$mode" == "validator" || "$mode" == "rpcnode" ]]; then
         try_pull_image cess-chain
     else
         log_err "the node mode is invalid, please config again"
@@ -627,7 +624,7 @@ function config_set_all() {
 
     set_node_mode
 
-    if [ x"$mode" == x"authority" ]; then
+    if [ x"$mode" == x"tee" ]; then
         set_chain_name
         set_ceseal_port
         set_ra_method
@@ -646,7 +643,9 @@ function config_set_all() {
         set_miner_use_cpu_cores
         set_miner_staking_account
         set_miner_reserved_tws
-    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
+    elif [[ "$mode" == "validator" ]]; then
+        set_chain_name
+    elif [[ "$mode" == "rpcnode" ]]; then
         set_chain_name
         set_chain_pruning_mode
     else
@@ -759,7 +758,7 @@ config_generate() {
 
     rm -rf $build_dir/.tmp
     local base_mode_path=/opt/cess/$mode
-    if [ x"$mode" == x"authority" ]; then
+    if [ x"$mode" == x"tee" ]; then
         if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/
         fi
@@ -777,11 +776,7 @@ config_generate() {
             mkdir -p $base_mode_path/miner/
         fi
         cp $build_dir/miner/* $base_mode_path/miner/
-    elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
-        if [[ -d /opt/cess/watcher ]]; then
-            #Preserve potential chain data before changing to rpcnode
-            mv /opt/cess/watcher $base_mode_path
-        fi
+    elif [[ "$mode" == "validator" || "$mode" == "rpcnode" ]]; then
         if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/
         fi
@@ -809,6 +804,10 @@ generate_node_key_if_need() {
     local image_tag=$profile
     local chain_spec="cess-$profile"
     docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec >/dev/null 2>&1
+    if [ "$mode" == "validator" ]; then
+      log_info "A session key was generated at: $host_base_path/chains/$chain_spec/network/secret_ed25519"
+      log_info "The node will become a validator once its session key has been bound and validated on the explorer"
+    fi
 }
 
 patch_wasm_override_if_testnet() {

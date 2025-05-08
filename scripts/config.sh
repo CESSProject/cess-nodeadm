@@ -776,7 +776,15 @@ config_generate() {
             mkdir -p $base_mode_path/miner/
         fi
         cp $build_dir/miner/* $base_mode_path/miner/
-    elif [[ "$mode" == "validator" || "$mode" == "rpcnode" ]]; then
+    elif [[ "$mode" == "validator" ]]; then
+        # if user set external chain with storage mode, and then switch to validator mode
+        # should remove the external chain config to make sure generate_node_key_if_need can be executed
+        yq -i eval "del(.node.externalChain)" $config_file
+        if [ ! -d $base_mode_path/chain/ ]; then
+            mkdir -p $base_mode_path/chain/
+        fi
+        cp $build_dir/chain/* $base_mode_path/chain/
+    elif [[ "$mode" == "rpcnode" ]]; then
         if [ ! -d $base_mode_path/chain/ ]; then
             mkdir -p $base_mode_path/chain/
         fi
@@ -804,6 +812,10 @@ generate_node_key_if_need() {
     local image_tag=$profile
     local chain_spec="cess-$profile"
     docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec >/dev/null 2>&1
+    if [ "$mode" == "validator" ]; then
+      log_info "A session key was generated at: $host_base_path/chains/$chain_spec/network/secret_ed25519"
+      log_info "The node will become a validator once its session key has been bound and validated with stash account on the explorer"
+    fi
 }
 
 patch_wasm_override_if_testnet() {

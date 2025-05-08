@@ -21,10 +21,9 @@ inner_docker_version() {
     show_version "config-gen" "cesslab/config-gen" "version"
 
     show_version "chain" "cesslab/cess-chain" "--version"
-    if [ x"$mode" == x"authority" ]; then
+    if [ x"$mode" == x"tee" ]; then
         show_version "cifrost" "cesslab/cifrost" "--version"
-        show_version "ceseal(DCAP)" "cesslab/ceseal" '-c "EXTRA_OPTS=version RA_METHOD=dcap ./start.sh" 2>&1 | tail -n 2 | head -n 1' "--device /dev/sgx_enclave --device /dev/sgx_provision --entrypoint /bin/bash -e SLEEP_BEFORE_START=0"
-        show_version "ceseal(EPID)" "cesslab/ceseal" '-c "EXTRA_OPTS=version RA_METHOD=epid ./start.sh" 2>&1 | tail -n 2 | head -n 1' "--device /dev/sgx_enclave --device /dev/sgx_provision --entrypoint /bin/bash -e SLEEP_BEFORE_START=0"
+        show_version "ceseal" "cesslab/ceseal" '-c "EXTRA_OPTS=version RA_METHOD=dcap ./start.sh" 2>&1 | tail -n 2 | head -n 1' "--device /dev/sgx_enclave --device /dev/sgx_provision --entrypoint /bin/bash -e SLEEP_BEFORE_START=0"
     elif [ x"$mode" == x"storage" ]; then
         show_version "miner" "cesslab/cess-miner" "version"
     fi

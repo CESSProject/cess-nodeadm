@@ -139,24 +139,24 @@ EOF
 }
 
 function purge() {
-    log_info "WARNING: this operate can remove your data regarding program and can't revert."
+    log_info "WARNING: this operation can remove your data regarding program and can't be reverted."
     log_info "         Make sure you understand you do!"
     printf "Press \033[0;33mY\033[0m if you really want to do: "
     local y=""
     read y
     if [ x"$y" != x"Y" ]; then
-        echo "purge operate cancel"
+        echo "purge operation cancel"
         return 1
     fi
 
     if [ x"$1" = x"" ]; then
-        if [ x"$mode" == x"authority" ]; then
+        if [ x"$mode" == x"tee" ]; then
             purge_chain
             purge_ceseal
         elif [ x"$mode" == x"storage" ]; then
             purge_miner
             purge_chain
-        elif [[ "$mode" == "watcher" || "$mode" == "rpcnode" ]]; then
+        elif [[ "$mode" == "validator" || "$mode" == "rpcnode" ]]; then
             purge_chain
         fi
         return $?
@@ -225,7 +225,7 @@ Usage:
     purge {chain|ceseal|miner}                  remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do
     
     config {...}                                configuration operations, use 'cess config help' for more details
-    profile {devnet|testnet|mainnet|ownnet}     switch CESS network profile, testnet for default
+    profile {devnet|testnet|mainnet}            switch CESS network profile, testnet for default
     miner {...}                                 use 'cess miner help' for more details
     tools {...}                                 use 'cess tools help' for more details
 EOF

@@ -1,7 +1,7 @@
 ## node configurations
 node:
-  ## the mode of node: authority/storage/rpcnode
-  mode: "authority"
+  ## the mode of node: tee/storage/validator/rpcnode
+  mode: "tee"
   chainWsUrl: ""
   profile: testnet
 

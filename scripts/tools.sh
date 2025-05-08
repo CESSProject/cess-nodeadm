@@ -13,7 +13,7 @@ EOF
 
 space_info() {
     if [ x"$mode" != x"storage" ]; then
-        log_info "Only on storage mode"
+        log_info "Can only execute this command on storage mode"
         exit 1
     fi
     local disk_path=$(yq eval ".miner.diskPath" $config_file)

@@ -59,7 +59,7 @@ check_port() {
     local port=$1
     local grep_port=$(netstat -tlpn | grep "\b$port\b")
     if [ -n "$grep_port" ]; then
-        log_err "please make sure port $port is not occupied"
+        log_err "please make sure port: $port is not occupied by other process"
         return 1
     fi
 }
@@ -117,7 +117,7 @@ get_distro_name() {
         DISTRO='Raspbian'
         PM='apt'
     else
-        log_err 'unsupport linux distro'
+        log_err 'unsupported linux distro'
         return 1
     fi
     return 0
@@ -154,10 +154,10 @@ function set_profile() {
     fi
     if [ x"$to_set" == x"devnet" ] || [ x"$to_set" == x"testnet" ] || [ x"$to_set" == x"mainnet" ] || [ x"$to_set" == x"ownnet" ]; then
         yq -i eval ".node.profile=\"$to_set\"" $config_file
-        log_success "the profile set to $to_set"
+        log_success "set profile to $to_set successfully"
         return 0
     fi
-    log_err "invalid profile value"
+    log_err "Invalid profile value"
     return 1
 }
 

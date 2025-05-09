@@ -4,7 +4,7 @@ source /opt/cess/nodeadm/scripts/utils.sh
 
 mode=$(yq eval ".node.mode" $config_file)
 if [ $? -ne 0 ]; then
-    log_err "the config file: $config_file may be invalid, please reconfig again"
+    log_err "the config file: $config_file may be invalid, please reconfigure again"
     exit 1
 fi
 
@@ -592,7 +592,7 @@ function try_pull_image() {
     log_info "download image: $img_id"
     docker pull $img_id
     if [ $? -ne 0 ]; then
-        log_err "download image $img_id failed, try again later"
+        log_err "download image $img_id failed, please try again later"
         exit 1
     fi
     return 0
@@ -610,7 +610,7 @@ function pull_images_by_mode() {
     elif [[ "$mode" == "validator" || "$mode" == "rpcnode" ]]; then
         try_pull_image cess-chain
     else
-        log_err "the node mode is invalid, please config again"
+        log_err "Invalid mode, please config again"
         return 1
     fi
     log_info "pull images finished"
@@ -656,7 +656,7 @@ function config_set_all() {
 
     if test -f "$compose_yaml"; then
         if [[ $prev_mode != $mode ]]; then
-            log_info "the mode changed, remove all services for $prev_mode mode"
+            log_info "Running mode changed, remove all services for $prev_mode mode"
             docker compose -f $compose_yaml down
         fi
     fi
@@ -667,12 +667,12 @@ function config_set_all() {
 
 config_chain_port() {
     if [ x"$1" = x"" ]; then
-        log_err "Please give right chain port."
+        log_err "Invalid chain port value."
         config_help
         return 1
     fi
     yq -i eval ".chain.port=$1" $config_file
-    log_success "Set chain port '$1' successfully"
+    log_success "Set chain port to '$1' successfully"
     shift
     config_generate $@
 }
@@ -682,7 +682,7 @@ function install_sgx_enable_if_absent() {
     if [ -x $sgx_enable_bin ]; then
         return 0
     fi
-    log_info "Begin install sgx_enable ..."
+    log_info "Begin to install sgx_enable ..."
     if ! command_exists gcc; then
         apt-get install -y gcc
     fi
@@ -729,11 +729,11 @@ config_generate() {
     fi
 
     if [[ ! -z $need_remove_service_before_gen ]]; then
-        log_info "need remove service before generate new config"
+        log_info "Start to remove service before generate new config"
         docker compose -f $compose_yaml down
     fi
 
-    log_info "Start generate configurations and docker compose file"
+    log_info "Start to generate configurations and docker compose file"
 
     rm -rf $build_dir
     mkdir -p $build_dir/.tmp
@@ -812,10 +812,6 @@ generate_node_key_if_need() {
     local image_tag=$profile
     local chain_spec="cess-$profile"
     docker run --rm -v $host_base_path:$base_path cesslab/cess-chain:$image_tag key generate-node-key --base-path $base_path --chain $chain_spec >/dev/null 2>&1
-    if [ "$mode" == "validator" ]; then
-      log_info "A session key was generated at: $host_base_path/chains/$chain_spec/network/secret_ed25519"
-      log_info "The node will become a validator once its session key has been bound and validated with stash account on the explorer"
-    fi
 }
 
 patch_wasm_override_if_testnet() {

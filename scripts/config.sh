@@ -33,9 +33,11 @@ config_show() {
     elif [[ $mode = "validator" || $mode = "rpcnode" ]]; then
         keys=('"node"')
     fi
-    local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
-    if [[ $use_external_chain -eq 0 ]]; then
-        keys+=('"chain"')
+    if [[ $mode != "tee" ]]; then
+        local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
+        if [[ $use_external_chain -eq 0 ]]; then
+            keys+=('"chain"')
+        fi
     fi
     local ss=$(join_by , ${keys[@]})
     yq eval ". |= pick([$ss])" $config_file -o json
@@ -121,10 +123,6 @@ set_node_mode() {
     if [ ! -d path_with_mode ]; then
         mkdir -p $path_with_mode
     fi
-}
-
-function assign_ceseal_chain_to_local() {
-    yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
 }
 
 function assign_miner_backup_chain_ws_urls() {
@@ -625,13 +623,11 @@ function config_set_all() {
     set_node_mode
 
     if [ x"$mode" == x"tee" ]; then
-        set_chain_name
         set_ceseal_port
         set_ra_method
         set_ceseal_endpoint
         set_ceseal_stash_account $(set_tee_type)
         set_ceseal_mnemonic_for_tx
-        assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then
         set_miner_port
         set_miner_endpoint
@@ -726,6 +722,9 @@ config_generate() {
         #TODO: will deprecated in next version
         yq -i eval "del(.miner.bootAddr)" $config_file
         assign_miner_backup_chain_ws_urls
+    elif [[ $mode = "tee" ]]; then
+        #TODO: will deprecated in next version
+        yq -i eval "del(.ceseal.chainWsUrl)" $config_file
     fi
 
     if [[ ! -z $need_remove_service_before_gen ]]; then
@@ -759,10 +758,10 @@ config_generate() {
     rm -rf $build_dir/.tmp
     local base_mode_path=/opt/cess/$mode
     if [ x"$mode" == x"tee" ]; then
-        if [ ! -d $base_mode_path/chain/ ]; then
-            mkdir -p $base_mode_path/chain/
+        if [ ! -d $base_mode_path/ceseal/ ]; then
+            mkdir -p $base_mode_path/ceseal/
         fi
-        cp $build_dir/chain/* $base_mode_path/chain/
+        cp $build_dir/ceseal/* $base_mode_path/ceseal/
         rm -rf $base_mode_path/proxy
         mkdir -p $base_mode_path/proxy/log $base_mode_path/proxy/conf
         cp /opt/cess/nodeadm/tee.conf $base_mode_path/proxy/conf/

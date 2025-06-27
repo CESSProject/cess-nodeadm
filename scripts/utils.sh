@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nodeadm_version="v0.6.1"
+nodeadm_version="v0.7.0"
 
 base_dir=/opt/cess/nodeadm
 script_dir=$base_dir/scripts

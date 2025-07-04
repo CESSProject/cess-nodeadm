@@ -233,26 +233,6 @@ function set_ceseal_port() {
     done
 }
 
-function set_ra_method() {
-    local to_set=""
-    local current="$(yq eval ".ceseal.raType //\"\"" $config_file)"
-    while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter the type of remote attestation method 'ias/dcap' (current: $current, press enter to skip): " to_set
-        else
-            read -p "Enter the type of remote attestation method 'ias/dcap': " to_set
-        fi
-        to_set=$(echo "$to_set")
-        if [[ -z $to_set ]]; then
-            break
-        fi
-        if [[ x"$to_set" == x"ias" || x"$to_set" == x"dcap" ]]; then
-            yq -i eval ".ceseal.raType=\"$to_set\"" $config_file
-            break
-        fi
-    done
-}
-
 function set_ceseal_endpoint() {
     local current="$(yq eval ".ceseal.endpointOnChain //\"\"" $config_file)"
     local input_uri=
@@ -624,7 +604,6 @@ function config_set_all() {
 
     if [ x"$mode" == x"tee" ]; then
         set_ceseal_port
-        set_ra_method
         set_ceseal_endpoint
         set_ceseal_stash_account $(set_tee_type)
         set_ceseal_mnemonic_for_tx
@@ -725,6 +704,7 @@ config_generate() {
     elif [[ $mode = "tee" ]]; then
         #TODO: will deprecated in next version
         yq -i eval "del(.ceseal.chainWsUrl)" $config_file
+        yq -i eval "del(.ceseal.raType)" $config_file
     fi
 
     if [[ ! -z $need_remove_service_before_gen ]]; then

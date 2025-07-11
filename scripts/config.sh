@@ -127,9 +127,12 @@ set_node_mode() {
 
 function assign_miner_backup_chain_ws_urls() {
     local chain_urls=
-    if [[ $profile = "testnet" ]]; then
+    if [[ $profile = "testnet2" ]]; then
         chain_urls=(
-            "wss://testnet-rpc.cess.cloud/ws/"
+            "wss://t2-rpc.cess.network"
+        )
+    elif [[ $profile = "testnet" ]]; then
+        chain_urls=(
             "wss://testnet-rpc.cess.network/ws/"
         )
     elif [[ $profile = "devnet" ]]; then
@@ -795,8 +798,10 @@ generate_node_key_if_need() {
 
 patch_wasm_override_if_testnet() {
     if [[ $profile != "testnet" ]]; then
+        yq -i eval "del(.chain.extraCmdArgs)" $config_file    
         return 1
     fi
+    #TODO: Will be deprecated on next major version
     yq -i eval ".chain.extraCmdArgs=\"--wasm-runtime-overrides /opt/cess/wasms\"" $config_file
 }
 

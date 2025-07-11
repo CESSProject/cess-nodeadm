@@ -7,7 +7,7 @@ script_dir=$base_dir/scripts
 config_file=$base_dir/config.yaml
 build_dir=$base_dir/build
 compose_yaml=$build_dir/docker-compose.yaml
-profile="testnet"
+profile="testnet2"
 
 function echo_c() {
     printf "\033[0;$1m$2\033[0m\n"
@@ -152,7 +152,7 @@ function set_profile() {
         log_info "current profile: $profile"
         return 0
     fi
-    if [ x"$to_set" == x"devnet" ] || [ x"$to_set" == x"testnet" ] || [ x"$to_set" == x"mainnet" ] || [ x"$to_set" == x"ownnet" ]; then
+    if [ x"$to_set" == x"devnet" ] || [ x"$to_set" == x"testnet2" ] || [ x"$to_set" == x"mainnet" ] || [ x"$to_set" == x"testnet" ]; then
         yq -i eval ".node.profile=\"$to_set\"" $config_file
         log_success "set profile to $to_set successfully"
         return 0
@@ -163,7 +163,7 @@ function set_profile() {
 
 function load_profile() {
     local p="$(yq eval ".node.profile" $config_file)"
-    if [ x"$p" == x"devnet" ] || [ x"$p" == x"testnet" ] || [ x"$p" == x"mainnet" ] || [ x"$p" == x"ownnet" ]; then
+    if [ x"$p" == x"devnet" ] || [ x"$p" == x"testnet2" ] || [ x"$p" == x"mainnet" ] || [ x"$p" == x"testnet" ]; then
         profile=$p
         return 0
     fi

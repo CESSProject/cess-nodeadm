@@ -225,7 +225,7 @@ Usage:
     purge {chain|ceseal|miner}                  remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do
     
     config {...}                                configuration operations, use 'cess config help' for more details
-    profile {devnet|testnet|mainnet}            switch CESS network profile, testnet for default
+    profile {devnet|testnet2|testnet}           switch CESS network profile, testnet2 for default
     miner {...}                                 use 'cess miner help' for more details
     tools {...}                                 use 'cess tools help' for more details
 EOF

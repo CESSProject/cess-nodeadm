@@ -582,9 +582,7 @@ function try_pull_image() {
 function pull_images_by_mode() {
     log_info "try pull images, node mode: $mode"
     if [ x"$mode" == x"tee" ]; then
-        try_pull_image cess-chain
         try_pull_image ceseal
-        try_pull_image cifrost
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-miner

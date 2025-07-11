@@ -198,7 +198,6 @@ function purge_miner() {
 }
 
 function purge_ceseal() {
-    stop cifrost
     stop ceseal
     rm -rf /opt/cess/$mode/ceseal/*
     if [ $? -eq 0 ]; then
@@ -214,10 +213,10 @@ Usage:
     help                                        show help information
     version                                     show version
 
-    start {chain|ceseal|cifrost|miner}          start all or one cess service
-    stop {chain|ceseal|cifrost|miner}           stop all or one cess service
-    reload {chain|ceseal|cifrost|miner}         reload (stop remove then start) all or one service
-    restart {chain|ceseal|cifrost|miner}        restart all or one cess service
+    start {chain|ceseal|miner}                  start all or one cess service
+    stop {chain|ceseal|miner}                   stop all or one cess service
+    reload {chain|ceseal|miner}                 reload (stop remove then start) all or one service
+    restart {chain|ceseal|miner}                restart all or one cess service
     down                                        stop and remove all service
 
     status                                      check service status

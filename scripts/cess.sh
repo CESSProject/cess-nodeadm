@@ -199,7 +199,7 @@ function purge_miner() {
 function purge_ceseal() {
     stop ceseal
     local ceseal_home=/opt/cess/$mode/ceseal/
-    find $ceseal_home ! -name "config.toml" ! -path "$ceseal_home" -delete
+    find $ceseal_home ! -name "config.toml" ! -path "$ceseal_home" -exec rm -rf {} +
     if [ $? -eq 0 ]; then
         log_success "purge ceseal data success"
     fi

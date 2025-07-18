@@ -151,7 +151,6 @@ function purge() {
 
     if [ x"$1" = x"" ]; then
         if [ x"$mode" == x"tee" ]; then
-            purge_chain
             purge_ceseal
         elif [ x"$mode" == x"storage" ]; then
             purge_miner

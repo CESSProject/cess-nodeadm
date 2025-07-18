@@ -2,7 +2,6 @@
 node:
   ## the mode of node: tee/storage/validator/rpcnode
   mode: "tee"
-  chainWsUrl: ""
   profile: testnet2
 
 ## chain configurations

@@ -698,15 +698,8 @@ config_generate() {
 
     patch_wasm_override_if_testnet
 
-    if [[ $mode = "storage" ]]; then
-        #TODO: will deprecated in next version
-        yq -i eval "del(.miner.bootAddr)" $config_file
-        assign_miner_backup_chain_ws_urls
-    elif [[ $mode = "tee" ]]; then
-        #TODO: will deprecated in next version
-        yq -i eval "del(.ceseal.chainWsUrl)" $config_file
-        yq -i eval "del(.ceseal.raType)" $config_file
-    fi
+    #TODO: will deprecated in next version
+    yq -i eval "del(.node.chainWsUrl, .ceseal.chainWsUrl, .ceseal.raType, .miner.bootAddr)" $config_file
 
     if [[ ! -z $need_remove_service_before_gen ]]; then
         log_info "Start to remove service before generate new config"

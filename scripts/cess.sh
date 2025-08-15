@@ -151,7 +151,6 @@ function purge() {
 
     if [ x"$1" = x"" ]; then
         if [ x"$mode" == x"tee" ]; then
-            purge_chain
             purge_ceseal
         elif [ x"$mode" == x"storage" ]; then
             purge_miner
@@ -198,9 +197,9 @@ function purge_miner() {
 }
 
 function purge_ceseal() {
-    stop cifrost
     stop ceseal
-    rm -rf /opt/cess/$mode/ceseal/*
+    local ceseal_home=/opt/cess/$mode/ceseal/
+    find $ceseal_home ! -name "config.toml" ! -path "$ceseal_home" -exec rm -rf {} +
     if [ $? -eq 0 ]; then
         log_success "purge ceseal data success"
     fi
@@ -214,10 +213,10 @@ Usage:
     help                                        show help information
     version                                     show version
 
-    start {chain|ceseal|cifrost|miner}          start all or one cess service
-    stop {chain|ceseal|cifrost|miner}           stop all or one cess service
-    reload {chain|ceseal|cifrost|miner}         reload (stop remove then start) all or one service
-    restart {chain|ceseal|cifrost|miner}        restart all or one cess service
+    start {chain|ceseal|miner}                  start all or one cess service
+    stop {chain|ceseal|miner}                   stop all or one cess service
+    reload {chain|ceseal|miner}                 reload (stop remove then start) all or one service
+    restart {chain|ceseal|miner}                restart all or one cess service
     down                                        stop and remove all service
 
     status                                      check service status
@@ -225,7 +224,7 @@ Usage:
     purge {chain|ceseal|miner}                  remove datas regarding program, WARNING: this operate can't revert, make sure you understand you do
     
     config {...}                                configuration operations, use 'cess config help' for more details
-    profile {devnet|testnet|mainnet}            switch CESS network profile, testnet for default
+    profile {devnet|testnet2|testnet}           switch CESS network profile, testnet2 for default
     miner {...}                                 use 'cess miner help' for more details
     tools {...}                                 use 'cess tools help' for more details
 EOF

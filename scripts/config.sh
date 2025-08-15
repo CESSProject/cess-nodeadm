@@ -33,9 +33,11 @@ config_show() {
     elif [[ $mode = "validator" || $mode = "rpcnode" ]]; then
         keys=('"node"')
     fi
-    local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
-    if [[ $use_external_chain -eq 0 ]]; then
-        keys+=('"chain"')
+    if [[ $mode != "tee" ]]; then
+        local use_external_chain=$(yq eval ".node.externalChain //0" $config_file)
+        if [[ $use_external_chain -eq 0 ]]; then
+            keys+=('"chain"')
+        fi
     fi
     local ss=$(join_by , ${keys[@]})
     yq eval ". |= pick([$ss])" $config_file -o json
@@ -123,15 +125,14 @@ set_node_mode() {
     fi
 }
 
-function assign_ceseal_chain_to_local() {
-    yq -i eval ".ceseal.chainWsUrl=\"$local_chain_ws_url_in_docker\"" $config_file
-}
-
 function assign_miner_backup_chain_ws_urls() {
     local chain_urls=
-    if [[ $profile = "testnet" ]]; then
+    if [[ $profile = "testnet2" ]]; then
         chain_urls=(
-            "wss://testnet-rpc.cess.cloud/ws/"
+            "wss://t2-rpc.cess.network"
+        )
+    elif [[ $profile = "testnet" ]]; then
+        chain_urls=(
             "wss://testnet-rpc.cess.network/ws/"
         )
     elif [[ $profile = "devnet" ]]; then
@@ -230,26 +231,6 @@ function set_ceseal_port() {
         fi
         read -p "  Please input a valid port number (press enter to skip): " to_set
         if [[ -z $to_set ]]; then
-            break
-        fi
-    done
-}
-
-function set_ra_method() {
-    local to_set=""
-    local current="$(yq eval ".ceseal.raType //\"\"" $config_file)"
-    while true; do
-        if [ x"$current" != x"" ]; then
-            read -p "Enter the type of remote attestation method 'ias/dcap' (current: $current, press enter to skip): " to_set
-        else
-            read -p "Enter the type of remote attestation method 'ias/dcap': " to_set
-        fi
-        to_set=$(echo "$to_set")
-        if [[ -z $to_set ]]; then
-            break
-        fi
-        if [[ x"$to_set" == x"ias" || x"$to_set" == x"dcap" ]]; then
-            yq -i eval ".ceseal.raType=\"$to_set\"" $config_file
             break
         fi
     done
@@ -601,9 +582,7 @@ function try_pull_image() {
 function pull_images_by_mode() {
     log_info "try pull images, node mode: $mode"
     if [ x"$mode" == x"tee" ]; then
-        try_pull_image cess-chain
         try_pull_image ceseal
-        try_pull_image cifrost
     elif [ x"$mode" == x"storage" ]; then
         try_pull_image cess-chain
         try_pull_image cess-miner
@@ -625,13 +604,10 @@ function config_set_all() {
     set_node_mode
 
     if [ x"$mode" == x"tee" ]; then
-        set_chain_name
         set_ceseal_port
-        set_ra_method
         set_ceseal_endpoint
         set_ceseal_stash_account $(set_tee_type)
         set_ceseal_mnemonic_for_tx
-        assign_ceseal_chain_to_local
     elif [ x"$mode" == x"storage" ]; then
         set_miner_port
         set_miner_endpoint
@@ -722,11 +698,8 @@ config_generate() {
 
     patch_wasm_override_if_testnet
 
-    if [[ $mode = "storage" ]]; then
-        #TODO: will deprecated in next version
-        yq -i eval "del(.miner.bootAddr)" $config_file
-        assign_miner_backup_chain_ws_urls
-    fi
+    #TODO: will deprecated in next version
+    yq -i eval "del(.node.chainWsUrl, .ceseal.chainWsUrl, .ceseal.raType, .miner.bootAddr)" $config_file
 
     if [[ ! -z $need_remove_service_before_gen ]]; then
         log_info "Start to remove service before generate new config"
@@ -759,10 +732,10 @@ config_generate() {
     rm -rf $build_dir/.tmp
     local base_mode_path=/opt/cess/$mode
     if [ x"$mode" == x"tee" ]; then
-        if [ ! -d $base_mode_path/chain/ ]; then
-            mkdir -p $base_mode_path/chain/
+        if [ ! -d $base_mode_path/ceseal/ ]; then
+            mkdir -p $base_mode_path/ceseal/
         fi
-        cp $build_dir/chain/* $base_mode_path/chain/
+        cp $build_dir/ceseal/* $base_mode_path/ceseal/
         rm -rf $base_mode_path/proxy
         mkdir -p $base_mode_path/proxy/log $base_mode_path/proxy/conf
         cp /opt/cess/nodeadm/tee.conf $base_mode_path/proxy/conf/
@@ -816,8 +789,10 @@ generate_node_key_if_need() {
 
 patch_wasm_override_if_testnet() {
     if [[ $profile != "testnet" ]]; then
+        yq -i eval "del(.chain.extraCmdArgs)" $config_file    
         return 1
     fi
+    #TODO: Will be deprecated on next major version
     yq -i eval ".chain.extraCmdArgs=\"--wasm-runtime-overrides /opt/cess/wasms\"" $config_file
 }
 

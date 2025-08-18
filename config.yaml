@@ -2,7 +2,7 @@
 node:
   ## the mode of node: tee/storage/validator/rpcnode
   mode: "tee"
-  profile: testnet2
+  profile: premainnet
 
 ## chain configurations
 chain:

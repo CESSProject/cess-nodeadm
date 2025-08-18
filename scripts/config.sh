@@ -127,7 +127,7 @@ set_node_mode() {
 
 function assign_miner_backup_chain_ws_urls() {
     local chain_urls=
-    if [[ $profile = "testnet2" ]]; then
+    if [[ $profile = "premainnet" ]]; then
         chain_urls=(
             "wss://t2-rpc.cess.network"
         )
